@@ -1,0 +1,25 @@
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#1f2937}
+.app{display:flex;min-height:100vh}.sidebar{width:250px;background:#172033;color:#fff;padding:22px 16px}
+.logo{font-size:24px;font-weight:700;margin-bottom:4px}.subtitle{font-size:12px;opacity:.7;margin-bottom:28px}
+.nav button{width:100%;text-align:left;border:0;background:transparent;color:#dbe3ef;padding:12px 14px;border-radius:8px;margin:3px 0;cursor:pointer}
+.nav button:hover,.nav button.active{background:#2d3b55;color:#fff}
+.main{flex:1}.topbar{height:68px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+.user{font-size:14px}.content{padding:28px}.page{display:none}.page.active{display:block}
+h1{margin:0 0 8px;font-size:26px}.muted{color:#6b7280}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:22px 0}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px}.card .value{font-size:28px;font-weight:700;margin-top:8px}
+.panel{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-top:18px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid #eee;font-size:14px}
+th{background:#f8fafc}.btn{border:0;border-radius:7px;padding:9px 13px;cursor:pointer;background:#25344d;color:#fff}
+.btn.secondary{background:#e5e7eb;color:#111827}
+input,select{padding:10px;border:1px solid #d1d5db;border-radius:7px;width:100%;margin-top:6px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.login{position:fixed;inset:0;background:#172033;display:flex;align-items:center;justify-content:center;z-index:10}
+.loginbox{width:390px;background:#fff;border-radius:14px;padding:30px}
+.loginbox h1{margin-bottom:4px}.loginbox .btn{width:100%;margin-top:18px}
+.error{color:#b91c1c;font-size:13px;margin-top:10px;display:none}
+.badge{display:inline-block;padding:5px 8px;border-radius:999px;background:#e8eef7;font-size:12px}
+.actions{display:flex;gap:8px;align-items:center}.search{max-width:300px}
+@media(max-width:900px){.sidebar{width:210px}.cards{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.sidebar{display:none}.cards,.formgrid{grid-template-columns:1fr}.content{padding:18px}}
