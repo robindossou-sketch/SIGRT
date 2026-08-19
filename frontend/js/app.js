@@ -12,63 +12,282 @@ const SIGRT = {
 if (savedCollaborateurs) {
     SIGRT.collaborateurs = JSON.parse(savedCollaborateurs);
 }
+const savedUsers = localStorage.getItem("sigrt_users");
 
-function saveCollaborateurs() {
-    localStorage.setItem(
-        "sigrt_collaborateurs",
-        JSON.stringify(SIGRT.collaborateurs)
-    );
+if (savedUsers) {
+    SIGRT.users = JSON.parse(savedUsers);
 }
 
+function saveCollaborateur(){
+
+    const required = [
+        "cMatricule",
+        "cName",
+        "cDept",
+        "cPost",
+        "cContract",
+        "cHire"
+    ];
+
+    if(required.some(id =>
+        !document.getElementById(id).value.trim()
+    )){
+        alert(
+            "Veuillez renseigner le matricule, le nom, le département, le poste, le contrat et la date d'embauche."
+        );
+        return;
+    }
+
+    const matricule = document.getElementById("cMatricule").value.trim();
+    const email = document.getElementById("cEmail").value.trim();
+
+    const i = Number(
+        document.getElementById("editCollabIndex").value
+    );
+
+    const conflitIndex =
+        findCollabIndexByMatricule(matricule);
+
+    if(conflitIndex >= 0 && conflitIndex !== i){
+
+        alert(
+            "Ce matricule est déjà utilisé par un autre collaborateur."
+        );
+
+        return;
+    }
+
+    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+
+        alert("L'adresse email n'est pas valide.");
+
+        return;
+    }
+
+    const c = {
+
+        matricule: matricule,
+
+        name: document.getElementById("cName").value.trim(),
+
+        birth: document.getElementById("cBirth").value,
+
+        sex: document.getElementById("cSex").value,
+
+        phone: document.getElementById("cPhone").value.trim(),
+
+        email: email,
+
+        dept: document.getElementById("cDept").value,
+
+        post: document.getElementById("cPost").value.trim(),
+
+        contract: document.getElementById("cContract").value,
+
+        hire: document.getElementById("cHire").value,
+
+        status: document.getElementById("cStatus").value,
+
+        manager: document.getElementById("cManager").value.trim(),
+
+        skills: document.getElementById("cSkills").value.trim(),
+
+        potential: document.getElementById("cPotential").value,
+
+        notes: document.getElementById("cNotes").value.trim()
+    };
+
+    if(i < 0){
+
+        SIGRT.collaborateurs.push(c);
+
+    }else{
+
+        SIGRT.collaborateurs[i] = c;
+    }
+
+    saveCollaborateurs();
+
+    closeCollabForm();
+
+    renderCollaborateurs();
+}
 
 function renderCollaborateurs(){
- const q=(document.getElementById("collabSearch")?.value||"").toLowerCase();
- const dept=document.getElementById("collabDept")?.value||"";
- const rows=SIGRT.collaborateurs.filter(c=>(!dept||c.dept===dept)&&(c.matricule+" "+c.name+" "+c.post+" "+c.dept).toLowerCase().includes(q));
- const tbody=document.getElementById("collabTable"); if(!tbody)return;
- tbody.innerHTML=rows.map(c=>{
-   const i=SIGRT.collaborateurs.indexOf(c);
-   return `<tr><td>${c.matricule}</td><td>${c.name}</td><td>${c.dept}</td><td>${c.post}</td><td>${c.contract}</td><td><span class="badge">${c.status}</span></td><td><div class="actions"><button class="btn secondary" onclick="viewCollaborateur(${i})">Voir</button><button class="btn secondary" onclick="editCollaborateur(${i})">Modifier</button><button class="btn secondary" onclick="deleteCollaborateur(${i})">Supprimer</button></div></td></tr>`;
- }).join("");
-}
-function openCollabForm(index=-1){
- document.getElementById("collabForm").style.display="block";
- document.getElementById("collabFormTitle").textContent=index<0?"Nouveau collaborateur":"Modifier le collaborateur";
- document.getElementById("editCollabIndex").value=index;
- if(index>=0){
-   const c=SIGRT.collaborateurs[index];
-   const map={cMatricule:"matricule",cName:"name",cBirth:"birth",cSex:"sex",cPhone:"phone",cEmail:"email",cDept:"dept",cPost:"post",cContract:"contract",cHire:"hire",cStatus:"status",cManager:"manager",cSkills:"skills",cPotential:"potential",cNotes:"notes"};
-   Object.entries(map).forEach(([id,k])=>document.getElementById(id).value=c[k]||"");
- } else {
-   ["cMatricule","cName","cBirth","cPhone","cEmail","cPost","cHire","cManager","cSkills","cNotes"].forEach(id=>document.getElementById(id).value="");
- }
-}
-function closeCollabForm(){document.getElementById("collabForm").style.display="none";}
-function saveCollaborateur(){
- const required=["cMatricule","cName","cDept","cPost","cContract","cHire"];
- if(required.some(id=>!document.getElementById(id).value.trim())){alert("Veuillez renseigner le matricule, le nom, le département, le poste, le contrat et la date d'embauche.");return;}
- const c={matricule:cMatricule.value.trim(),name:cName.value.trim(),birth:cBirth.value,sex:cSex.value,phone:cPhone.value.trim(),email:cEmail.value.trim(),dept:cDept.value,post:cPost.value.trim(),contract:cContract.value,hire:cHire.value,status:cStatus.value,manager:cManager.value.trim(),skills:cSkills.value.trim(),potential:cPotential.value,notes:cNotes.value.trim()};
- const i=Number(document.getElementById("editCollabIndex").value);
- if(i<0) SIGRT.collaborateurs.push(c); else SIGRT.collaborateurs[i]=c;
- saveCollaborateurs();
- closeCollabForm(); renderCollaborateurs();
-}
-function viewCollaborateur(i){
- const c=SIGRT.collaborateurs[i];
- document.getElementById("collabDetail").style.display="block";
- document.getElementById("detailContent").innerHTML=`
- <div class="formgrid">
- <div><strong>Matricule</strong><br>${c.matricule}</div><div><strong>Nom</strong><br>${c.name}</div>
- <div><strong>Département</strong><br>${c.dept}</div><div><strong>Poste</strong><br>${c.post}</div>
- <div><strong>Contrat</strong><br>${c.contract}</div><div><strong>Date d'embauche</strong><br>${c.hire}</div>
- <div><strong>Statut</strong><br>${c.status}</div><div><strong>Manager</strong><br>${c.manager||"—"}</div>
- <div><strong>Téléphone</strong><br>${c.phone||"—"}</div><div><strong>Email</strong><br>${c.email||"—"}</div>
- <div><strong>Compétences</strong><br>${c.skills||"—"}</div><div><strong>Potentiel</strong><br>${c.potential}</div>
- </div><div class="panel"><strong>Observations</strong><p>${c.notes||"Aucune observation."}</p></div>`;
-}
-function editCollaborateur(i){openCollabForm(i);}
-function deleteCollaborateur(i){if(confirm("Supprimer définitivement ce collaborateur du prototype ?")){SIGRT.collaborateurs.splice(i,1);saveCollaborateurs();renderCollaborateurs();document.getElementById("collabDetail").style.display="none";}}
+    const q = (document.getElementById("collabSearch")?.value || "").toLowerCase();
+    const dept = document.getElementById("collabDept")?.value || "";
 
+    const rows = SIGRT.collaborateurs.filter(c =>
+        (!dept || c.dept === dept) &&
+        (c.matricule + " " + c.name + " " + c.post + " " + c.dept)
+            .toLowerCase()
+            .includes(q)
+    );
+
+    const counter = document.getElementById("collabCount");
+
+    if(counter){
+        counter.textContent = SIGRT.collaborateurs.length;
+    }
+
+    const tbody = document.getElementById("collabTable");
+
+    if(!tbody) return;
+
+    tbody.innerHTML = rows.map(c => {
+
+        return `
+        <tr>
+            <td>${escapeHtml(c.matricule)}</td>
+            <td>${escapeHtml(c.name)}</td>
+            <td>${escapeHtml(c.dept)}</td>
+            <td>${escapeHtml(c.post)}</td>
+            <td>${escapeHtml(c.contract)}</td>
+            <td>
+                <span class="badge">${escapeHtml(c.status)}</span>
+            </td>
+            <td>
+                <div class="actions">
+                    <button class="btn secondary"
+                        onclick="viewCollaborateur('${c.matricule}')">
+                        Voir
+                    </button>
+
+                    <button class="btn secondary"
+                        onclick="editCollaborateur('${c.matricule}')">
+                        Modifier
+                    </button>
+
+                    <button class="btn secondary"
+                        onclick="deleteCollaborateur('${c.matricule}')">
+                        Supprimer
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join("");
+}
+
+function closeCollabForm(){document.getElementById("collabForm").style.display="none";}
+
+function findCollabIndexByMatricule(matricule){
+    return SIGRT.collaborateurs.findIndex(
+        c => c.matricule === matricule
+    );
+}
+function viewCollaborateur(matricule){
+
+    const i = findCollabIndexByMatricule(matricule);
+
+    if(i < 0) return;
+
+    const c = SIGRT.collaborateurs[i];
+
+    document.getElementById("collabDetail").style.display = "block";
+
+    document.getElementById("detailContent").innerHTML = `
+        <div class="formgrid">
+
+            <div>
+                <strong>Matricule</strong><br>
+                ${escapeHtml(c.matricule)}
+            </div>
+
+            <div>
+                <strong>Nom</strong><br>
+                ${escapeHtml(c.name)}
+            </div>
+
+            <div>
+                <strong>Département</strong><br>
+                ${escapeHtml(c.dept)}
+            </div>
+
+            <div>
+                <strong>Poste</strong><br>
+                ${escapeHtml(c.post)}
+            </div>
+
+            <div>
+                <strong>Contrat</strong><br>
+                ${escapeHtml(c.contract)}
+            </div>
+
+            <div>
+                <strong>Date d'embauche</strong><br>
+                ${escapeHtml(c.hire)}
+            </div>
+
+            <div>
+                <strong>Statut</strong><br>
+                ${escapeHtml(c.status)}
+            </div>
+
+            <div>
+                <strong>Manager</strong><br>
+                ${escapeHtml(c.manager || "—")}
+            </div>
+
+            <div>
+                <strong>Téléphone</strong><br>
+                ${escapeHtml(c.phone || "—")}
+            </div>
+
+            <div>
+                <strong>Email</strong><br>
+                ${escapeHtml(c.email || "—")}
+            </div>
+
+            <div>
+                <strong>Compétences</strong><br>
+                ${escapeHtml(c.skills || "—")}
+            </div>
+
+            <div>
+                <strong>Potentiel</strong><br>
+                ${escapeHtml(c.potential)}
+            </div>
+
+        </div>
+
+        <div class="panel">
+            <strong>Observations</strong>
+            <p>${escapeHtml(c.notes || "Aucune observation.")}</p>
+        </div>
+    `;
+}
+function editCollaborateur(matricule){
+
+    const i = findCollabIndexByMatricule(matricule);
+
+    if(i < 0) return;
+
+    openCollabForm(i);
+}
+
+
+function deleteCollaborateur(matricule){
+
+    const i = findCollabIndexByMatricule(matricule);
+
+    if(i < 0) return;
+
+    if(confirm("Supprimer définitivement ce collaborateur du prototype ?")){
+
+        SIGRT.collaborateurs.splice(i, 1);
+
+        saveCollaborateurs();
+        renderCollaborateurs();
+
+        document.getElementById("collabDetail").style.display = "none";
+    }
+}
+
+        renderCollaborateurs();
+
+        document.getElementById("collabDetail").style.display = "none";
+    }
+}
 function renderApp(){
 document.getElementById("app").innerHTML = `
 <div class="login" id="loginScreen">
@@ -90,6 +309,7 @@ document.getElementById("app").innerHTML = `
     <button class="active" onclick="showPage('dashboard',this)">Tableau de bord</button>
     <button onclick="showPage('users',this)">Utilisateurs & rôles</button>
     <button onclick="showPage('collaborateurs',this)">Collaborateurs</button>
+    <button onclick="showPage('performance',this)">Performance</button>
     <button onclick="showPage('settings',this)">Paramètres du système</button>
     <button onclick="showPage('audit',this)">Journal d’audit</button>
   </div>
@@ -172,8 +392,45 @@ document.getElementById("app").innerHTML = `
 <h3>Fiche collaborateur</h3>
 <div id="detailContent"></div>
 </div>
+
 </div>
 
+<div class="page" id="performance">
+<h1>Gestion de la performance</h1>
+<div class="muted">Suivi et évaluation de la performance des collaborateurs.</div>
+
+<div class="panel">
+<h3>Évaluations des collaborateurs</h3>
+
+<div class="actions">
+<select id="performanceCollaborateur" style="max-width:260px">
+<option value="">Sélectionner un collaborateur</option>
+</select>
+
+<select id="performancePeriode" style="max-width:180px">
+<option value="">Période</option>
+<option>2026 - S1</option>
+<option>2026 - S2</option>
+</select>
+
+<button class="btn" onclick="openPerformanceForm()">+ Nouvelle évaluation</button>
+</div>
+
+<table style="margin-top:18px">
+<thead>
+<tr>
+<th>Collaborateur</th>
+<th>Période</th>
+<th>Score</th>
+<th>Statut</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="performanceTable"></tbody>
+</table>
+</div>
+</div>
 <div class="page" id="settings"><h1>Paramètres du système</h1>
 <div class="panel"><h3>Configuration générale</h3><div class="formgrid">
 <label>Nom du système<input value="SIGRT"></label><label>Version<input value="1.0 – Prototype"></label>
@@ -184,6 +441,7 @@ document.getElementById("app").innerHTML = `
 <tr><td>Performance</td><td>2</td><td>À développer</td></tr><tr><td>Formation</td><td>2</td><td>À développer</td></tr>
 <tr><td>Rétention / fidélisation</td><td>2</td><td>À développer</td></tr><tr><td>KPI / Reporting</td><td>3</td><td>À développer</td></tr>
 <tr><td>Aide à la décision IA</td><td>4</td><td>À développer</td></tr></table></div></div>
+
 
 <div class="page" id="audit"><h1>Journal d’audit</h1><div class="muted">Prototype de traçabilité.</div>
 <div class="panel"><table><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Résultat</th></tr>
@@ -201,24 +459,99 @@ function logout(){document.getElementById("loginScreen").style.display="flex";}
 function showPage(id,btn){
  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active")); document.getElementById(id).classList.add("active");
  document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active")); btn.classList.add("active");
- document.getElementById("pageTitle").textContent={dashboard:"Tableau de bord",users:"Utilisateurs & rôles",collaborateurs:"Gestion des collaborateurs",settings:"Paramètres du système",audit:"Journal d’audit"}[id];
+ document.getElementById("pageTitle").textContent={dashboard:"Tableau de bord",users:"Utilisateurs & rôles",collaborateurs:"Gestion des collaborateurs",performance:"Gestion de la performance",settings:"Paramètres du système",audit:"Journal d’audit"}[id];
  if(id==="users")renderUsers(); if(id==="collaborateurs")renderCollaborateurs();
 }
+function escapeHtml(value){
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function saveUsers(){
+    localStorage.setItem(
+        "sigrt_users",
+        JSON.stringify(SIGRT.users)
+    );
+}
 function renderUsers(){
- const q=(document.getElementById("userSearch")?.value||"").toLowerCase(), tbody=document.getElementById("userTable");
- if(!tbody)return;
- tbody.innerHTML=SIGRT.users.filter(u=>(u.name+" "+u.login+" "+u.role).toLowerCase().includes(q)).map((u,i)=>
- `<tr><td>${u.name}</td><td>${u.login}</td><td>${u.role}</td><td><span class="badge">${u.status}</span></td><td><button class="btn secondary" onclick="removeUser(${i})">Supprimer</button></td></tr>`).join("");
- document.getElementById("userCount").textContent=SIGRT.users.length;
+    const q = (document.getElementById("userSearch")?.value || "").toLowerCase();
+    const tbody = document.getElementById("userTable");
+
+    if(!tbody) return;
+
+    tbody.innerHTML = SIGRT.users
+        .filter(u =>
+            (u.name + " " + u.login + " " + u.role)
+            .toLowerCase()
+            .includes(q)
+        )
+        .map((u,i) =>
+            `<tr>
+                <td>${escapeHtml(u.name)}</td>
+                <td>${escapeHtml(u.login)}</td>
+                <td>${escapeHtml(u.role)}</td>
+                <td><span class="badge">${escapeHtml(u.status)}</span></td>
+                <td>
+                    <button class="btn secondary" onclick="removeUser(${i})">
+                        Supprimer
+                    </button>
+                </td>
+            </tr>`
+        )
+        .join("");
+
+    const countEl = document.getElementById("userCount");
+
+    if(countEl){
+        countEl.textContent = SIGRT.users.length;
+    }
 }
-function openUserForm(){document.getElementById("userForm").style.display="block"}
-function closeUserForm(){document.getElementById("userForm").style.display="none"}
+
+function openUserForm(){
+    document.getElementById("userForm").style.display = "block";
+}
+
+function closeUserForm(){
+    document.getElementById("userForm").style.display = "none";
+}
+
 function addUser(){
- const name=document.getElementById("newName").value.trim(), login=document.getElementById("newLogin").value.trim();
- if(!name||!login){alert("Veuillez renseigner le nom et l'identifiant.");return}
- SIGRT.users.push({name,login,role:document.getElementById("newRole").value,status:document.getElementById("newStatus").value});
- closeUserForm();renderUsers();
+    const name = document.getElementById("newName").value.trim();
+    const login = document.getElementById("newLogin").value.trim();
+
+    if(!name || !login){
+        alert("Veuillez renseigner le nom et l'identifiant.");
+        return;
+    }
+
+    SIGRT.users.push({
+        name: name,
+        login: login,
+        role: document.getElementById("newRole").value,
+        status: document.getElementById("newStatus").value
+    });
+
+    saveUsers();
+
+    closeUserForm();
+    renderUsers();
 }
-function removeUser(i){if(confirm("Supprimer cet utilisateur du prototype ?")){SIGRT.users.splice(i,1);renderUsers()}}
+
+function removeUser(i){
+    if(confirm("Supprimer cet utilisateur du prototype ?")){
+        SIGRT.users.splice(i,1);
+        saveUsers();
+        renderUsers();
+    }
+}
+
 renderApp();
-document.getElementById("collabCount").textContent = SIGRT.collaborateurs.length;
+const collabCount = document.getElementById("collabCount");
+
+if(collabCount){
+    collabCount.textContent = SIGRT.collaborateurs.length;
+}
