@@ -17,7 +17,20 @@ const savedUsers = localStorage.getItem("sigrt_users");
 if (savedUsers) {
     SIGRT.users = JSON.parse(savedUsers);
 }
+const savedTalents = localStorage.getItem("sigrt_talents");
 
+if (savedTalents) {
+    SIGRT.talents = JSON.parse(savedTalents);
+} else {
+    SIGRT.talents = [];
+}
+
+function saveTalents(){
+    localStorage.setItem(
+        "sigrt_talents",
+        JSON.stringify(SIGRT.talents)
+    );
+}
 function saveCollaborateur(){
 
     const required = [
@@ -282,11 +295,369 @@ function deleteCollaborateur(matricule){
         document.getElementById("collabDetail").style.display = "none";
     }
 }
+function saveCollaborateurs(){
+    localStorage.setItem(
+        "sigrt_collaborateurs",
+        JSON.stringify(SIGRT.collaborateurs)
+    );
+}
 
-        renderCollaborateurs();
+function openCollabForm(index = -1){
 
-        document.getElementById("collabDetail").style.display = "none";
+    const form = document.getElementById("collabForm");
+
+    if(!form) return;
+
+    document.getElementById("editCollabIndex").value = index;
+
+    if(index >= 0){
+
+        const c = SIGRT.collaborateurs[index];
+
+        document.getElementById("collabFormTitle").textContent =
+            "Modifier le collaborateur";
+
+        document.getElementById("cMatricule").value = c.matricule || "";
+        document.getElementById("cName").value = c.name || "";
+        document.getElementById("cBirth").value = c.birth || "";
+        document.getElementById("cSex").value = c.sex || "Non renseigné";
+        document.getElementById("cPhone").value = c.phone || "";
+        document.getElementById("cEmail").value = c.email || "";
+        document.getElementById("cDept").value = c.dept || "Ressources Humaines";
+        document.getElementById("cPost").value = c.post || "";
+        document.getElementById("cContract").value = c.contract || "CDI";
+        document.getElementById("cHire").value = c.hire || "";
+        document.getElementById("cStatus").value = c.status || "Actif";
+        document.getElementById("cManager").value = c.manager || "";
+        document.getElementById("cSkills").value = c.skills || "";
+        document.getElementById("cPotential").value = c.potential || "À évaluer";
+        document.getElementById("cNotes").value = c.notes || "";
+
+    }else{
+
+        document.getElementById("collabFormTitle").textContent =
+            "Nouveau collaborateur";
+
+        document.getElementById("editCollabIndex").value = "-1";
+
+        document.getElementById("cMatricule").value = "";
+        document.getElementById("cName").value = "";
+        document.getElementById("cBirth").value = "";
+        document.getElementById("cSex").value = "Non renseigné";
+        document.getElementById("cPhone").value = "";
+        document.getElementById("cEmail").value = "";
+        document.getElementById("cDept").value = "Ressources Humaines";
+        document.getElementById("cPost").value = "";
+        document.getElementById("cContract").value = "CDI";
+        document.getElementById("cHire").value = "";
+        document.getElementById("cStatus").value = "Actif";
+        document.getElementById("cManager").value = "";
+        document.getElementById("cSkills").value = "";
+        document.getElementById("cPotential").value = "À évaluer";
+        document.getElementById("cNotes").value = "";
     }
+
+    form.style.display = "block";
+
+    document.getElementById("cMatricule").focus();
+}
+function renderTalents(){
+
+    const search =
+        (document.getElementById("talentSearch")?.value || "")
+        .toLowerCase();
+
+    const potentiel =
+        document.getElementById("talentPotentiel")?.value || "";
+
+    const table =
+        document.getElementById("talentTable");
+
+    if(!table) return;
+
+    const talents = SIGRT.talents.filter(t => {
+
+        const collaborateur =
+            SIGRT.collaborateurs.find(
+                c => c.matricule === t.matricule
+            );
+
+        if(!collaborateur) return false;
+
+        const matchSearch =
+            collaborateur.name.toLowerCase().includes(search) ||
+            collaborateur.matricule.toLowerCase().includes(search);
+
+        const matchPotentiel =
+            !potentiel || t.potentiel === potentiel;
+
+        return matchSearch && matchPotentiel;
+    });
+
+    table.innerHTML = talents.map(t => {
+
+        const c =
+            SIGRT.collaborateurs.find(
+                x => x.matricule === t.matricule
+            );
+
+        return `
+        <tr>
+            <td>${escapeHtml(c?.name || "")}</td>
+            <td>${escapeHtml(c?.post || "")}</td>
+            <td>${escapeHtml(t.potentiel || "")}</td>
+            <td>${escapeHtml(t.posteCible || "À définir")}</td>
+            <td>
+                <span class="badge">
+                    ${escapeHtml(t.statut || "À développer")}
+                </span>
+            </td>
+            <td>
+                <button class="btn secondary"
+                    onclick="editTalent('${t.matricule}')">
+                    Modifier
+                </button>
+            </td>
+        </tr>
+        `;
+    }).join("");
+
+    if(!talents.length){
+        table.innerHTML = `
+        <tr>
+            <td colspan="6" style="text-align:center;padding:20px">
+                Aucun talent enregistré.
+            </td>
+        </tr>
+        `;
+    }
+}
+function openTalentForm(matricule = ""){
+
+    let form = document.getElementById("talentForm");
+
+    if(!form){
+        form = document.createElement("div");
+        form.className = "panel";
+        form.id = "talentForm";
+        form.style.marginTop = "18px";
+
+        form.innerHTML = `
+            <h3 id="talentFormTitle">Ajouter un talent</h3>
+
+            <div class="formgrid">
+
+                <label>
+                    Collaborateur
+                    <select id="talentCollaborateur">
+                        <option value="">Sélectionner un collaborateur</option>
+                        ${SIGRT.collaborateurs.map(c => `
+                            <option value="${escapeHtml(c.matricule)}">
+                                ${escapeHtml(c.name)} — ${escapeHtml(c.matricule)}
+                            </option>
+                        `).join("")}
+                    </select>
+                </label>
+
+                <label>
+                    Potentiel
+                    <select id="talentPotentielForm">
+                        <option value="">Sélectionner</option>
+                        <option>Potentiel élevé</option>
+                        <option>Potentiel moyen</option>
+                        <option>Potentiel à développer</option>
+                    </select>
+                </label>
+
+                <label>
+                    Poste cible
+                    <input id="talentPosteCible"
+                           placeholder="Ex. Responsable RH">
+                </label>
+
+                <label>
+                    Statut
+                    <select id="talentStatut">
+                        <option>À développer</option>
+                        <option>En développement</option>
+                        <option>Prêt pour évolution</option>
+                        <option>Promu</option>
+                    </select>
+                </label>
+
+            </div>
+
+            <label style="display:block;margin-top:14px">
+                Observations
+                <textarea id="talentNotes"
+                    rows="4"
+                    style="width:100%;margin-top:6px;padding:10px;border:1px solid #d1d5db;border-radius:7px"
+                    placeholder="Observations, compétences à développer, projet professionnel..."></textarea>
+            </label>
+
+            <div class="actions" style="margin-top:15px">
+                <button class="btn" onclick="saveTalent()">
+                    Enregistrer
+                </button>
+
+                <button class="btn secondary" onclick="closeTalentForm()">
+                    Annuler
+                </button>
+            </div>
+        `;
+
+        document.querySelector("#talents .panel").after(form);
+    }
+
+    form.style.display = "block";
+
+    const select = document.getElementById("talentCollaborateur");
+
+    if(matricule){
+        select.value = matricule;
+    }else{
+        select.value = "";
+    }
+
+    document.getElementById("talentPotentielForm").value = "";
+    document.getElementById("talentPosteCible").value = "";
+    document.getElementById("talentStatut").value = "À développer";
+    document.getElementById("talentNotes").value = "";
+
+    document.getElementById("talentFormTitle").textContent =
+        matricule ? "Modifier le talent" : "Ajouter un talent";
+}
+
+
+function closeTalentForm(){
+
+    const form = document.getElementById("talentForm");
+
+    if(form){
+        form.style.display = "none";
+    }
+}
+
+
+function saveTalent(){
+
+    const matricule =
+        document.getElementById("talentCollaborateur").value;
+
+    const potentiel =
+        document.getElementById("talentPotentielForm").value;
+
+    const posteCible =
+        document.getElementById("talentPosteCible").value.trim();
+
+    const statut =
+        document.getElementById("talentStatut").value;
+
+    const notes =
+        document.getElementById("talentNotes").value.trim();
+
+    if(!matricule){
+        alert("Veuillez sélectionner un collaborateur.");
+        return;
+    }
+
+    if(!potentiel){
+        alert("Veuillez sélectionner le potentiel du collaborateur.");
+        return;
+    }
+
+    const existant =
+        SIGRT.talents.findIndex(
+            t => t.matricule === matricule
+        );
+
+    const talent = {
+        matricule: matricule,
+        potentiel: potentiel,
+        posteCible: posteCible,
+        statut: statut,
+        notes: notes
+    };
+
+    if(existant >= 0){
+
+        SIGRT.talents[existant] = talent;
+
+    }else{
+
+        SIGRT.talents.push(talent);
+
+    }
+
+    saveTalents();
+
+    closeTalentForm();
+
+    renderTalents();
+
+    alert("Talent enregistré avec succès.");
+}
+
+
+function editTalent(matricule){
+
+    const talent =
+        SIGRT.talents.find(
+            t => t.matricule === matricule
+        );
+
+    if(!talent){
+        alert("Talent introuvable.");
+        return;
+    }
+
+    openTalentForm(matricule);
+
+    document.getElementById("talentPotentielForm").value =
+        talent.potentiel || "";
+
+    document.getElementById("talentPosteCible").value =
+        talent.posteCible || "";
+
+    document.getElementById("talentStatut").value =
+        talent.statut || "À développer";
+
+    document.getElementById("talentNotes").value =
+        talent.notes || "";
+}
+
+
+function deleteTalent(matricule){
+
+    const index =
+        SIGRT.talents.findIndex(
+            t => t.matricule === matricule
+        );
+
+    if(index < 0){
+        alert("Talent introuvable.");
+        return;
+    }
+
+    const collaborateur =
+        SIGRT.collaborateurs.find(
+            c => c.matricule === matricule
+        );
+
+    const nom =
+        collaborateur?.name || matricule;
+
+    if(!confirm(
+        `Voulez-vous retirer ${nom} du référentiel des talents ?`
+    )){
+        return;
+    }
+
+    SIGRT.talents.splice(index, 1);
+
+    saveTalents();
+
+    renderTalents();
 }
 function renderApp(){
 document.getElementById("app").innerHTML = `
@@ -310,6 +681,7 @@ document.getElementById("app").innerHTML = `
     <button onclick="showPage('users',this)">Utilisateurs & rôles</button>
     <button onclick="showPage('collaborateurs',this)">Collaborateurs</button>
     <button onclick="showPage('performance',this)">Performance</button>
+   <button onclick="showPage('talents',this)">Talents</button>
     <button onclick="showPage('settings',this)">Paramètres du système</button>
     <button onclick="showPage('audit',this)">Journal d’audit</button>
   </div>
@@ -326,15 +698,7 @@ document.getElementById("app").innerHTML = `
 <div class="card"><div class="muted">Rôles</div><div class="value">3</div></div>
 <div class="card"><div class="muted">Alertes système</div><div class="value">0</div></div>
 </div>
-<div class="panel"><h3>Architecture fonctionnelle du socle</h3>
-<table><tr><th>Composant</th><th>État</th><th>Finalité</th></tr>
-<tr><td>Authentification</td><td><span class="badge">Actif</span></td><td>Contrôler l'accès</td></tr>
-<tr><td>Utilisateurs</td><td><span class="badge">Actif</span></td><td>Gérer les comptes</td></tr>
-<tr><td>Rôles & permissions</td><td><span class="badge">Actif</span></td><td>Gérer les habilitations</td></tr>
-<tr><td>Tableau de bord</td><td><span class="badge">Actif</span></td><td>Présenter les indicateurs</td></tr>
-<tr><td>Journal d'audit</td><td><span class="badge">Actif</span></td><td>Tracer les opérations</td></tr>
-</table></div></div>
-
+</div>
 <div class="page" id="users"><h1>Utilisateurs & rôles</h1>
 <div class="muted">Gestion du contrôle d'accès au SIGRT.</div>
 <div class="panel"><div class="actions">
@@ -430,6 +794,151 @@ document.getElementById("app").innerHTML = `
 <tbody id="performanceTable"></tbody>
 </table>
 </div>
+<div class="panel" id="performanceForm" style="display:none">
+<h3 id="performanceFormTitle">Nouvelle évaluation</h3>
+
+<div class="formgrid">
+
+<label>
+Collaborateur
+<select id="evalCollaborateur"></select>
+</label>
+
+<label>
+Période
+<select id="evalPeriode">
+<option value="">Sélectionner</option>
+<option>2026 - S1</option>
+<option>2026 - S2</option>
+</select>
+</label>
+
+<label>
+Qualité du travail
+<select id="evalQualite">
+<option value="">Sélectionner</option>
+<option value="1">1 - Insuffisant</option>
+<option value="2">2 - À améliorer</option>
+<option value="3">3 - Satisfaisant</option>
+<option value="4">4 - Très satisfaisant</option>
+<option value="5">5 - Excellent</option>
+</select>
+</label>
+
+<label>
+Productivité
+<select id="evalProductivite">
+<option value="">Sélectionner</option>
+<option value="1">1 - Insuffisant</option>
+<option value="2">2 - À améliorer</option>
+<option value="3">3 - Satisfaisant</option>
+<option value="4">4 - Très satisfaisant</option>
+<option value="5">5 - Excellent</option>
+</select>
+</label>
+
+<label>
+Respect des procédures
+<select id="evalProcedures">
+<option value="">Sélectionner</option>
+<option value="1">1 - Insuffisant</option>
+<option value="2">2 - À améliorer</option>
+<option value="3">3 - Satisfaisant</option>
+<option value="4">4 - Très satisfaisant</option>
+<option value="5">5 - Excellent</option>
+</select>
+</label>
+
+<label>
+Comportement professionnel
+<select id="evalComportement">
+<option value="">Sélectionner</option>
+<option value="1">1 - Insuffisant</option>
+<option value="2">2 - À améliorer</option>
+<option value="3">3 - Satisfaisant</option>
+<option value="4">4 - Très satisfaisant</option>
+<option value="5">5 - Excellent</option>
+</select>
+</label>
+
+<label>
+Compétences
+<select id="evalCompetences">
+<option value="">Sélectionner</option>
+<option value="1">1 - Insuffisant</option>
+<option value="2">2 - À améliorer</option>
+<option value="3">3 - Satisfaisant</option>
+<option value="4">4 - Très satisfaisant</option>
+<option value="5">5 - Excellent</option>
+</select>
+</label>
+
+<label>
+Potentiel d'évolution
+<select id="evalPotentiel">
+<option value="">Sélectionner</option>
+<option>Faible</option>
+<option>Moyen</option>
+<option>Élevé</option>
+</select>
+</label>
+
+</div>
+
+<label style="display:block;margin-top:14px">
+Commentaire du manager
+<textarea id="evalCommentaire"
+rows="4"
+style="width:100%;margin-top:6px;padding:10px;border:1px solid #d1d5db;border-radius:7px">
+</textarea>
+</label>
+
+<div class="actions" style="margin-top:15px">
+
+<button class="btn" onclick="savePerformance()">
+Enregistrer
+</button>
+
+<button class="btn secondary" onclick="closePerformanceForm()">
+Annuler
+</button>
+
+</div>
+
+</div>
+</div>
+<div class="page" id="talents">
+<h1>Gestion des talents</h1>
+<div class="muted">Identification, suivi et développement des talents du SIGRT.</div>
+
+<div class="panel">
+<h3>Référentiel des talents</h3>
+
+<div class="actions">
+<input class="search" id="talentSearch" placeholder="Rechercher un collaborateur...">
+<select id="talentPotentiel" style="max-width:200px">
+<option value="">Tous les potentiels</option>
+<option>Potentiel élevé</option>
+<option>Potentiel moyen</option>
+<option>Potentiel à développer</option>
+</select>
+<button class="btn" onclick="openTalentForm()">+ Ajouter un talent</button>
+</div>
+
+<table style="margin-top:18px">
+<thead>
+<tr>
+<th>Collaborateur</th>
+<th>Poste actuel</th>
+<th>Potentiel</th>
+<th>Poste cible</th>
+<th>Statut</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="talentTable"></tbody>
+</table>
+</div>
 </div>
 <div class="page" id="settings"><h1>Paramètres du système</h1>
 <div class="panel"><h3>Configuration générale</h3><div class="formgrid">
@@ -451,25 +960,64 @@ renderUsers();
 }
 
 function login(){
- const u=document.getElementById("loginUser").value.trim(), p=document.getElementById("loginPass").value;
- if(u==="admin" && p==="sigrt123"){document.getElementById("loginScreen").style.display="none";document.getElementById("auditDate").textContent=new Date().toLocaleString("fr-FR");}
- else document.getElementById("loginError").style.display="block";
+
+    const u = document.getElementById("loginUser").value.trim();
+    const p = document.getElementById("loginPass").value;
+
+    if(u === "admin" && p === "sigrt123"){
+
+        localStorage.setItem("sigrt_session", "admin");
+
+        document.getElementById("loginScreen").style.display = "none";
+
+        document.getElementById("auditDate").textContent =
+            new Date().toLocaleString("fr-FR");
+
+    }else{
+
+        document.getElementById("loginError").style.display = "block";
+    }
 }
-function logout(){document.getElementById("loginScreen").style.display="flex";}
+function logout(){
+
+    localStorage.removeItem("sigrt_session");
+
+    document.getElementById("loginScreen").style.display = "flex";
+}
+function restoreSession(){
+
+    const session = localStorage.getItem("sigrt_session");
+
+    if(session === "admin"){
+
+        document.getElementById("loginScreen").style.display = "none";
+
+        const auditDate = document.getElementById("auditDate");
+
+        if(auditDate){
+            auditDate.textContent =
+                new Date().toLocaleString("fr-FR");
+        }
+    }
+}
 function showPage(id,btn){
  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active")); document.getElementById(id).classList.add("active");
  document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active")); btn.classList.add("active");
- document.getElementById("pageTitle").textContent={dashboard:"Tableau de bord",users:"Utilisateurs & rôles",collaborateurs:"Gestion des collaborateurs",performance:"Gestion de la performance",settings:"Paramètres du système",audit:"Journal d’audit"}[id];
- if(id==="users")renderUsers(); if(id==="collaborateurs")renderCollaborateurs();
-}
-function escapeHtml(value){
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+ document.getElementById("pageTitle").textContent={dashboard:"Tableau de bord",users:"Utilisateurs & rôles",collaborateurs:"Gestion des collaborateurs",performance:"Gestion de la performance",talents:"Gestion des talents",settings:"Paramètres du système",audit:"Journal d’audit"}[id];
+ if(id==="users")renderUsers();
+if(id==="collaborateurs")renderCollaborateurs();
+if(id==="performance")renderPerformance();
+if(id==="talents")renderTalents();
+ }
+
+  function escapeHtml(value){
+      return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+  }
 
 function saveUsers(){
     localStorage.setItem(
@@ -548,10 +1096,309 @@ function removeUser(i){
         renderUsers();
     }
 }
+function openPerformanceForm(){
 
+    const form = document.getElementById("performanceForm");
+    const select = document.getElementById("evalCollaborateur");
+
+    select.innerHTML = `
+        <option value="">Sélectionner un collaborateur</option>
+        ${SIGRT.collaborateurs.map(c =>
+            `<option value="${escapeHtml(c.matricule)}">
+                ${escapeHtml(c.name)} - ${escapeHtml(c.matricule)}
+            </option>`
+        ).join("")}
+    `;
+
+    form.style.display = "block";
+}
+
+
+function closePerformanceForm(){
+
+    document.getElementById("performanceForm").style.display = "none";
+}
+
+
+function savePerformance(){
+
+    const matricule =
+        document.getElementById("evalCollaborateur").value;
+
+    const periode =
+        document.getElementById("evalPeriode").value;
+
+    const qualite =
+        document.getElementById("evalQualite").value;
+
+    const productivite =
+        document.getElementById("evalProductivite").value;
+
+    const procedures =
+        document.getElementById("evalProcedures").value;
+
+    const comportement =
+        document.getElementById("evalComportement").value;
+
+    const competences =
+        document.getElementById("evalCompetences").value;
+
+    const potentiel =
+        document.getElementById("evalPotentiel").value;
+
+    const commentaire =
+        document.getElementById("evalCommentaire").value.trim();
+
+
+    if(!matricule || !periode){
+
+        alert("Veuillez sélectionner le collaborateur et la période.");
+
+        return;
+    }
+
+
+    if(!qualite ||
+       !productivite ||
+       !procedures ||
+       !comportement ||
+       !competences){
+
+        alert("Veuillez renseigner tous les critères d'évaluation.");
+
+        return;
+    }
+
+
+    const score = (
+        Number(qualite) +
+        Number(productivite) +
+        Number(procedures) +
+        Number(comportement) +
+        Number(competences)
+    ) / 5;
+
+
+    const evaluation = {
+
+        id: Date.now(),
+
+        matricule: matricule,
+
+        periode: periode,
+
+        qualite: Number(qualite),
+
+        productivite: Number(productivite),
+
+        procedures: Number(procedures),
+
+        comportement: Number(comportement),
+
+        competences: Number(competences),
+
+        potentiel: potentiel,
+
+        commentaire: commentaire,
+
+        score: Number(score.toFixed(2)),
+
+        statut: "Évaluée",
+
+        date: new Date().toISOString()
+
+    };
+
+
+    let evaluations =
+        JSON.parse(localStorage.getItem("sigrt_evaluations")) || [];
+
+
+    evaluations.push(evaluation);
+
+
+    localStorage.setItem(
+        "sigrt_evaluations",
+        JSON.stringify(evaluations)
+    );
+function proposerTalentDepuisEvaluation(evaluation){
+
+    const collaborateur =
+        SIGRT.collaborateurs.find(
+            c => c.matricule === evaluation.matricule
+        );
+
+    if(!collaborateur){
+        return;
+    }
+
+    let potentiel = "";
+
+    if(evaluation.score >= 4){
+        potentiel = "Potentiel élevé";
+    }else if(evaluation.score >= 3){
+        potentiel = "Potentiel moyen";
+    }else{
+        potentiel = "Potentiel à développer";
+    }
+
+    const existe =
+        SIGRT.talents.find(
+            t => t.matricule === evaluation.matricule
+        );
+
+    if(existe){
+        return;
+    }
+
+    const confirmer = confirm(
+        `${collaborateur.name} a obtenu une moyenne de ${evaluation.score}/5.\n\n` +
+        `Potentiel proposé : ${potentiel}.\n\n` +
+        `Voulez-vous ajouter ce collaborateur au référentiel des talents ?`
+    );
+
+    if(!confirmer){
+        return;
+    }
+
+    SIGRT.talents.push({
+        matricule: evaluation.matricule,
+        potentiel: potentiel,
+        posteCible: "",
+        statut: "À développer",
+        notes:
+            `Ajouté automatiquement à partir de l'évaluation ${evaluation.periode}. ` +
+            `Score moyen : ${evaluation.score}/5.`
+    });
+
+    saveTalents();
+
+    if(
+        document.getElementById("talentTable")
+    ){
+        renderTalents();
+    }
+
+    alert(
+        `${collaborateur.name} a été ajouté au référentiel des talents.`
+    );
+}
+
+    renderPerformance();
+
+    closePerformanceForm();
+
+
+    alert("Évaluation enregistrée avec succès.");
+}
+function renderPerformance(){
+
+    const tbody =
+        document.getElementById("performanceTable");
+
+    if(!tbody) return;
+
+
+    const evaluations =
+        JSON.parse(localStorage.getItem("sigrt_evaluations")) || [];
+
+
+    tbody.innerHTML = evaluations.map(evaluation => {
+
+        const collaborateur =
+            SIGRT.collaborateurs.find(
+                c => c.matricule === evaluation.matricule
+            );
+
+
+        const nom =
+            collaborateur
+                ? collaborateur.name
+                : evaluation.matricule;
+
+
+        return `
+            <tr>
+
+                <td>${escapeHtml(nom)}</td>
+
+                <td>${escapeHtml(evaluation.periode)}</td>
+
+                <td>
+                    <strong>${evaluation.score}/5</strong>
+                </td>
+
+                <td>
+                    <span class="badge">
+                        ${escapeHtml(evaluation.statut)}
+                    </span>
+                </td>
+
+                <td>
+
+                    <button
+                        class="btn secondary"
+                        onclick="viewPerformance(${evaluation.id})">
+                        Voir
+                    </button>
+
+                </td>
+
+            </tr>
+        `;
+
+    }).join("");
+}
+function viewPerformance(id){
+
+    const evaluations =
+        JSON.parse(localStorage.getItem("sigrt_evaluations")) || [];
+
+    const evaluation =
+        evaluations.find(e => e.id === id);
+
+    if(!evaluation) return;
+
+
+    const collaborateur =
+        SIGRT.collaborateurs.find(
+            c => c.matricule === evaluation.matricule
+        );
+
+
+    const nom =
+        collaborateur
+            ? collaborateur.name
+            : evaluation.matricule;
+
+
+    alert(
+        "Évaluation de : " + nom +
+        "\n\n" +
+        "Période : " + evaluation.periode +
+        "\n" +
+        "Score : " + evaluation.score + "/5" +
+        "\n\n" +
+        "Qualité : " + evaluation.qualite + "/5" +
+        "\n" +
+        "Productivité : " + evaluation.productivite + "/5" +
+        "\n" +
+        "Procédures : " + evaluation.procedures + "/5" +
+        "\n" +
+        "Comportement : " + evaluation.comportement + "/5" +
+        "\n" +
+        "Compétences : " + evaluation.competences + "/5" +
+        "\n" +
+        "Potentiel : " + (evaluation.potentiel || "Non renseigné") +
+        "\n\n" +
+        "Commentaire : " +
+        (evaluation.commentaire || "Aucun commentaire.")
+    );
+}
 renderApp();
-const collabCount = document.getElementById("collabCount");
+restoreSession();
 
+const collabCount = document.getElementById("collabCount");
 if(collabCount){
     collabCount.textContent = SIGRT.collaborateurs.length;
 }
