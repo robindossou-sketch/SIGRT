@@ -1216,11 +1216,19 @@ function savePerformance(){
 
     evaluations.push(evaluation);
 
-
     localStorage.setItem(
         "sigrt_evaluations",
         JSON.stringify(evaluations)
     );
+
+    proposerTalentDepuisEvaluation(evaluation);
+
+    renderPerformance();
+
+    closePerformanceForm();
+
+    alert("Évaluation enregistrée avec succès.");
+}
 function proposerTalentDepuisEvaluation(evaluation){
 
     const collaborateur =
@@ -1279,18 +1287,7 @@ function proposerTalentDepuisEvaluation(evaluation){
         renderTalents();
     }
 
-    alert(
-        `${collaborateur.name} a été ajouté au référentiel des talents.`
-    );
-}
-
-    renderPerformance();
-
-    closePerformanceForm();
-
-
-    alert("Évaluation enregistrée avec succès.");
-}
+}    
 function renderPerformance(){
 
     const tbody =
