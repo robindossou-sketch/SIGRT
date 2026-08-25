@@ -394,6 +394,9 @@ function renderTalents(){
         return matchSearch && matchPotentiel;
     });
 
+     const evaluations =
+        JSON.parse(localStorage.getItem("sigrt_evaluations")) || [];
+
     table.innerHTML = talents.map(t => {
 
         const c =
@@ -401,17 +404,82 @@ function renderTalents(){
                 x => x.matricule === t.matricule
             );
 
+        const historique =
+            evaluations
+                .filter(e => e.matricule === t.matricule)
+                .sort(
+                    (a, b) =>
+                        new Date(a.date) - new Date(b.date)
+                );
+
+        const derniere =
+            historique.length
+                ? Number(historique[historique.length - 1].score)
+                : null;
+
+        const premiere =
+            historique.length
+                ? Number(historique[0].score)
+                : null;
+
+        let ecart = null;
+        let tendance = "Non évalué";
+
+        if(historique.length > 1){
+
+            ecart =
+                derniere - premiere;
+
+            if(ecart > 0){
+                tendance = "En progression";
+            }else if(ecart < 0){
+                tendance = "En baisse";
+            }else{
+                tendance = "Stable";
+            }
+        }else if(historique.length === 1){
+            tendance = "Première évaluation";
+        }
+
+        const scoreText =
+            derniere !== null
+                ? derniere.toFixed(2) + "/5"
+                : "Non évalué";
+
+        const ecartText =
+            ecart !== null
+                ? (ecart > 0 ? "+" : "") +
+                  ecart.toFixed(2) + " pt"
+                : "—";
+
         return `
         <tr>
             <td>${escapeHtml(c?.name || "")}</td>
+
             <td>${escapeHtml(c?.post || "")}</td>
+
             <td>${escapeHtml(t.potentiel || "")}</td>
+
+            <td>
+                <strong>${scoreText}</strong>
+            </td>
+
+            <td>${ecartText}</td>
+
+            <td>
+                <span class="badge">
+                    ${escapeHtml(tendance)}
+                </span>
+            </td>
+
             <td>${escapeHtml(t.posteCible || "À définir")}</td>
+
             <td>
                 <span class="badge">
                     ${escapeHtml(t.statut || "À développer")}
                 </span>
             </td>
+
             <td>
                 <button class="btn secondary"
                     onclick="editTalent('${t.matricule}')">
@@ -425,7 +493,7 @@ function renderTalents(){
     if(!talents.length){
         table.innerHTML = `
         <tr>
-            <td colspan="6" style="text-align:center;padding:20px">
+            <td colspan="9" style="text-align:center;padding:20px">
                 Aucun talent enregistré.
             </td>
         </tr>
@@ -931,6 +999,9 @@ Annuler
 <th>Collaborateur</th>
 <th>Poste actuel</th>
 <th>Potentiel</th>
+<th>Dernier score</th>
+<th>Écart</th>
+<th>Tendance</th>
 <th>Poste cible</th>
 <th>Statut</th>
 <th>Action</th>
@@ -1295,10 +1366,8 @@ function renderPerformance(){
 
     if(!tbody) return;
 
-
     const evaluations =
         JSON.parse(localStorage.getItem("sigrt_evaluations")) || [];
-
 
     tbody.innerHTML = evaluations.map(evaluation => {
 
@@ -1307,12 +1376,22 @@ function renderPerformance(){
                 c => c.matricule === evaluation.matricule
             );
 
-
         const nom =
             collaborateur
                 ? collaborateur.name
                 : evaluation.matricule;
 
+        let niveau = "";
+
+        if(evaluation.score >= 4){
+            niveau = "Très bonne performance";
+        }else if(evaluation.score >= 3){
+            niveau = "Performance satisfaisante";
+        }else if(evaluation.score >= 2){
+            niveau = "Performance à améliorer";
+        }else{
+            niveau = "Performance insuffisante";
+        }
 
         return `
             <tr>
@@ -1323,6 +1402,10 @@ function renderPerformance(){
 
                 <td>
                     <strong>${evaluation.score}/5</strong>
+                </td>
+
+                <td>
+                    ${escapeHtml(niveau)}
                 </td>
 
                 <td>
@@ -1356,41 +1439,112 @@ function viewPerformance(id){
 
     if(!evaluation) return;
 
-
     const collaborateur =
         SIGRT.collaborateurs.find(
             c => c.matricule === evaluation.matricule
         );
-
 
     const nom =
         collaborateur
             ? collaborateur.name
             : evaluation.matricule;
 
+    const historique =
+        evaluations
+            .filter(
+                e => e.matricule === evaluation.matricule
+            )
+            .sort(
+                (a,b) =>
+                    new Date(a.date) - new Date(b.date)
+            );
 
-    alert(
-        "Évaluation de : " + nom +
-        "\n\n" +
-        "Période : " + evaluation.periode +
-        "\n" +
-        "Score : " + evaluation.score + "/5" +
-        "\n\n" +
-        "Qualité : " + evaluation.qualite + "/5" +
-        "\n" +
-        "Productivité : " + evaluation.productivite + "/5" +
-        "\n" +
-        "Procédures : " + evaluation.procedures + "/5" +
-        "\n" +
-        "Comportement : " + evaluation.comportement + "/5" +
-        "\n" +
-        "Compétences : " + evaluation.competences + "/5" +
-        "\n" +
-        "Potentiel : " + (evaluation.potentiel || "Non renseigné") +
-        "\n\n" +
-        "Commentaire : " +
-        (evaluation.commentaire || "Aucun commentaire.")
-    );
+    let message =
+        "COLLABORATEUR : " + nom +
+        "\nMatricule : " + evaluation.matricule +
+        "\n\n";
+
+    message +=
+        "ÉVALUATION SÉLECTIONNÉE" +
+        "\n------------------------------" +
+        "\nPériode : " + evaluation.periode +
+        "\nScore : " + evaluation.score + "/5" +
+        "\nQualité : " + evaluation.qualite + "/5" +
+        "\nProductivité : " + evaluation.productivite + "/5" +
+        "\nProcédures : " + evaluation.procedures + "/5" +
+        "\nComportement : " + evaluation.comportement + "/5" +
+        "\nCompétences : " + evaluation.competences + "/5" +
+        "\nPotentiel : " +
+        (evaluation.potentiel || "Non renseigné") +
+        "\n\nCommentaire : " +
+        (evaluation.commentaire || "Aucun commentaire.");
+
+    message +=
+        "\n\n\nHISTORIQUE DES ÉVALUATIONS" +
+        "\n------------------------------";
+
+    historique.forEach((e, index) => {
+
+        message +=
+            "\n" +
+            (index + 1) +
+            ". " +
+            e.periode +
+            " → " +
+            e.score +
+            "/5";
+    });
+
+    if(historique.length > 1){
+
+        const somme =
+            historique.reduce(
+                (total, e) =>
+                    total + Number(e.score || 0),
+                0
+            );
+
+        const moyenne =
+            somme / historique.length;
+
+        const premiere =
+            Number(historique[0].score);
+
+        const derniere =
+            Number(
+                historique[historique.length - 1].score
+            );
+
+         const ecartPoints =
+            Number((derniere - premiere).toFixed(2));
+
+        let tendance = "Stable";
+
+        if(ecartPoints > 0){
+            tendance = "En progression";
+        }else if(ecartPoints < 0){
+            tendance = "En baisse";
+        }
+
+          message +=
+            "\n\nMoyenne historique : " +
+            moyenne.toFixed(2) +
+            "/5" +
+            "\nPremière évaluation : " +
+            premiere +
+            "/5" +
+            "\nDernière évaluation : " +
+            derniere +
+            "/5" +
+            "\nÉcart de performance : " +
+            (ecartPoints > 0 ? "+" : "") +
+            ecartPoints +
+            " point(s)" +
+            "\nTendance : " +
+            tendance;
+    }
+
+    alert(message);
 }
 renderApp();
 restoreSession();
