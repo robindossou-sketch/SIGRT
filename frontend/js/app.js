@@ -1338,7 +1338,7 @@ Tableau de bord des indicateurs clés de performance des ressources humaines.
 </div>
 
 <div class="panel">
-<strong>Taux de rétention</strong>
+<strong>Taux de collaborateurs à risque</strong>
 <h2 id="kpiRetention">0 %</h2>
 </div>
 
@@ -1971,14 +1971,11 @@ function renderKPI(){
         ).length;
 
     const retentionTaux =
-        effectifTotal > 0
-            ? (
-                (
-                    effectifTotal - risques
-                ) / effectifTotal * 100
-              ).toFixed(1)
-            : "0.0";
-
+    effectifActif > 0
+        ? (
+            risques / effectifActif * 100
+          ).toFixed(1)
+        : "0.0";
 
     /* =========================
        AFFICHAGE
