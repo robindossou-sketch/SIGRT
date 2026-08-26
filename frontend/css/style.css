@@ -23,3 +23,91 @@ input,select{padding:10px;border:1px solid #d1d5db;border-radius:7px;width:100%;
 .actions{display:flex;gap:8px;align-items:center}.search{max-width:300px}
 @media(max-width:900px){.sidebar{width:210px}.cards{grid-template-columns:1fr 1fr}}
 @media(max-width:650px){.sidebar{display:none}.cards,.formgrid{grid-template-columns:1fr}.content{padding:18px}}
+
+/* =========================
+   CARTES KPI - SIGRT
+========================= */
+
+.kpi-card{
+    border-left:5px solid;
+    transition:transform .2s ease,box-shadow .2s ease;
+}
+
+.kpi-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+.kpi-effectif{
+    border-left-color:#2563eb;
+}
+
+.kpi-actif{
+    border-left-color:#16a34a;
+}
+
+.kpi-evalues{
+    border-left-color:#6366f1;
+}
+
+.kpi-performance{
+    border-left-color:#0f766e;
+}
+
+.kpi-talents{
+    border-left-color:#9333ea;
+}
+
+.kpi-formation{
+    border-left-color:#ea580c;
+}
+
+.kpi-risque{
+    border-left-color:#dc2626;
+}
+
+.kpi-taux-risque{
+    border-left-color:#f59e0b;
+}
+
+.kpi-card strong{
+    display:block;
+    margin-bottom:8px;
+}
+
+.kpi-card h2{
+    margin:0;
+    font-size:28px;
+}
+/* =========================
+   PRIORITES - AIDE A LA DECISION RH
+========================= */
+
+.badge.priorite-critique{
+    background:#fee2e2;
+    color:#991b1b;
+    font-weight:700;
+}
+
+.badge.priorite-elevee{
+    background:#ffedd5;
+    color:#9a3412;
+    font-weight:700;
+}
+
+.badge.priorite-moyenne{
+    background:#fef3c7;
+    color:#92400e;
+    font-weight:700;
+}
+tr.decision-critique{
+    background:#fff1f2;
+}
+
+tr.decision-elevee{
+    background:#fff7ed;
+}
+
+tr.decision-moyenne{
+    background:#fffbeb;
+}

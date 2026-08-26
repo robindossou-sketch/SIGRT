@@ -1302,42 +1302,42 @@ Tableau de bord des indicateurs clés de performance des ressources humaines.
 
 <div class="formgrid">
 
-<div class="panel">
+<div class="panel kpi-card kpi-effectif">
 <strong>Effectif total</strong>
 <h2 id="kpiEffectifTotal">0</h2>
 </div>
 
-<div class="panel">
+<div class="panel kpi-card kpi-actif">
 <strong>Effectif actif</strong>
 <h2 id="kpiEffectifActif">0</h2>
 </div>
 
-<div class="panel">
+<div class="panel kpi-card kpi-evalues">
 <strong>Collaborateurs évalués</strong>
 <h2 id="kpiCollaborateursEvalues">0</h2>
 </div>
 
-<div class="panel">
+<div class="panel kpi-card kpi-performance">
 <strong>Score moyen de performance</strong>
 <h2 id="kpiScoreMoyen">0 / 5</h2>
 </div>
 
-<div class="panel">
+<div class="panel kpi-card kpi-talents">
 <strong>Talents identifiés</strong>
 <h2 id="kpiTalents">0</h2>
 </div>
 
-<div class="panel">
+<div class="panel kpi-card kpi-formation">
 <strong>Formations enregistrées</strong>
 <h2 id="kpiFormations">0</h2>
 </div>
 
-<div class="panel">
+<div class="panel kpi-card kpi-risque">
 <strong>Collaborateurs à risque</strong>
 <h2 id="kpiRisque">0</h2>
 </div>
 
-<div class="panel">
+<div class="panel kpi-card kpi-taux-risque">
 <strong>Taux de collaborateurs à risque</strong>
 <h2 id="kpiRetention">0 %</h2>
 </div>
@@ -2271,10 +2271,10 @@ function renderDecision(){
             table.innerHTML =
                 recommandations.map(r => `
 
-                    <tr>
+                    <tr class="decision-${String(r.priorite).toLowerCase().replace("é","e")}">
 
                         <td>
-                            <span class="badge">
+                            <span class="badge priorite-${String(r.priorite).toLowerCase().replace("é","e")}">
                                 ${escapeHtml(r.priorite)}
                             </span>
                         </td>
@@ -2344,6 +2344,7 @@ function showPage(id,btn){
 if(id==="collaborateurs")renderCollaborateurs();
 if(id==="performance")renderPerformance();
 if(id==="talents")renderTalents();
+if(id==="formation") renderFormations();
 if(id==="retention")renderRetention();
 if(id==="kpi")renderKPI();
 if(id==="decision")renderDecision();
