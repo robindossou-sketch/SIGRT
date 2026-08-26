@@ -753,6 +753,7 @@ document.getElementById("app").innerHTML = `
     <button onclick="showPage('formation',this)">Formation</button>
     <button onclick="showPage('retention',this)">Rétention / Fidélisation</button>
     <button onclick="showPage('kpi',this)">KPI / Reporting</button>
+    <button onclick="showPage('decision',this)">Aide à la décision RH</button>
     <button onclick="showPage('settings',this)">Paramètres du système</button>
     <button onclick="showPage('audit',this)">Journal d’audit</button>
   </div>
@@ -1392,6 +1393,84 @@ Tableau de bord des indicateurs clés de performance des ressources humaines.
 </div>
 
 </div>
+<div class="page" id="decision">
+
+<h1>Aide à la décision RH</h1>
+
+<div class="muted">
+Analyse automatique des données RH et identification des situations nécessitant une action.
+</div>
+
+<div class="panel">
+
+<h3>Diagnostic RH</h3>
+
+<div id="decisionSummary" class="muted">
+Analyse en cours...
+</div>
+
+</div>
+
+<div class="panel">
+
+<h3>Alertes et recommandations</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Priorité</th>
+<th>Domaine</th>
+<th>Constat</th>
+<th>Recommandation</th>
+</tr>
+</thead>
+
+<tbody id="decisionTable">
+
+<tr>
+<td colspan="4" style="text-align:center;padding:20px">
+Aucune analyse disponible.
+</td>
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+<div class="panel">
+
+<h3>Indicateurs nécessitant une attention</h3>
+
+<div class="formgrid">
+
+<div class="panel">
+<strong>Performance en baisse</strong>
+<h2 id="decisionPerformanceBaisse">0</h2>
+</div>
+
+<div class="panel">
+<strong>Talents à développer</strong>
+<h2 id="decisionTalentsDevelopper">0</h2>
+</div>
+
+<div class="panel">
+<strong>Risque de départ</strong>
+<h2 id="decisionRisqueDepart">0</h2>
+</div>
+
+<div class="panel">
+<strong>Besoins de formation</strong>
+<h2 id="decisionFormation">0</h2>
+</div>
+
+</div>
+
+</div>
+
+</div>
 <div class="page" id="settings"><h1>Paramètres du système</h1>
 <div class="panel"><h3>Configuration générale</h3><div class="formgrid">
 <label>Nom du système<input value="SIGRT"></label><label>Version<input value="1.0 – Prototype"></label>
@@ -1958,6 +2037,297 @@ function renderKPI(){
     });
 
 }
+function renderDecision(){
+
+    const collaborateurs = SIGRT.collaborateurs || [];
+    const talents = SIGRT.talents || [];
+
+    const evaluations =
+        JSON.parse(
+            localStorage.getItem("sigrt_evaluations")
+        ) || [];
+
+    const formations =
+        JSON.parse(
+            localStorage.getItem("sigrt_formations")
+        ) || [];
+
+    const retention =
+        JSON.parse(
+            localStorage.getItem("sigrt_retention")
+        ) || [];
+
+
+    let performanceBaisse = 0;
+    let talentsDevelopper = 0;
+    let risqueDepart = 0;
+    let besoinsFormation = 0;
+
+    const recommandations = [];
+
+
+    /* =========================
+       ANALYSE PERFORMANCE
+    ========================= */
+
+    collaborateurs.forEach(c => {
+
+        const historique =
+            evaluations
+                .filter(e =>
+                    e.matricule === c.matricule
+                )
+                .sort((a,b) =>
+                    new Date(a.date || 0) -
+                    new Date(b.date || 0)
+                );
+
+        if(historique.length >= 2){
+
+            const premiere =
+                Number(historique[0].score);
+
+            const derniere =
+                Number(
+                    historique[historique.length - 1].score
+                );
+
+            if(
+                !isNaN(premiere) &&
+                !isNaN(derniere) &&
+                derniere < premiere
+            ){
+
+                performanceBaisse++;
+
+                recommandations.push({
+                    priorite:"Élevée",
+                    domaine:"Performance",
+                    constat:
+                        c.name +
+                        " présente une baisse de performance.",
+                    recommandation:
+                        "Prévoir un entretien de suivi et identifier les causes de la baisse."
+                });
+            }
+        }
+    });
+
+
+    /* =========================
+       ANALYSE TALENTS
+    ========================= */
+
+    talents.forEach(t => {
+
+        const potentiel =
+            String(t.potentiel || "")
+                .toLowerCase();
+
+        if(
+            potentiel.includes("fort") ||
+            potentiel.includes("élevé")
+        ){
+
+            talentsDevelopper++;
+
+            const c =
+                collaborateurs.find(
+                    x => x.matricule === t.matricule
+                );
+
+            recommandations.push({
+                priorite:"Moyenne",
+                domaine:"Talent",
+                constat:
+                    (c?.name || t.matricule) +
+                    " présente un potentiel élevé.",
+                recommandation:
+                    "Élaborer un plan de développement et étudier une évolution professionnelle."
+            });
+        }
+    });
+
+
+    /* =========================
+       ANALYSE RÉTENTION
+    ========================= */
+
+    retention.forEach(r => {
+
+        const risque =
+            String(r.risque || "")
+                .toLowerCase();
+
+        if(
+            risque.includes("élevé") ||
+            risque.includes("critique")
+        ){
+
+            risqueDepart++;
+
+            const c =
+                collaborateurs.find(
+                    x => x.matricule === r.matricule
+                );
+
+            recommandations.push({
+                priorite:"Critique",
+                domaine:"Rétention",
+                constat:
+                    (c?.name || r.matricule) +
+                    " présente un niveau de risque de départ important.",
+                recommandation:
+                    "Organiser un entretien de fidélisation et analyser les facteurs de risque."
+            });
+        }
+    });
+
+
+    /* =========================
+       ANALYSE FORMATION
+    ========================= */
+
+    formations.forEach(f => {
+
+        const statut =
+            String(f.statut || "")
+                .toLowerCase();
+
+        if(
+            statut.includes("à planifier") ||
+            statut.includes("besoin") ||
+            statut.includes("en attente")
+        ){
+
+            besoinsFormation++;
+
+            recommandations.push({
+                priorite:"Moyenne",
+                domaine:"Formation",
+                constat:
+                    f.intitule ||
+                    f.formation ||
+                    "Besoin de formation identifié.",
+                recommandation:
+                    "Planifier l'action de formation et assurer son suivi."
+            });
+        }
+    });
+
+
+    /* =========================
+       AFFICHAGE DES INDICATEURS
+    ========================= */
+
+    const elements = {
+
+        decisionPerformanceBaisse:
+            performanceBaisse,
+
+        decisionTalentsDevelopper:
+            talentsDevelopper,
+
+        decisionRisqueDepart:
+            risqueDepart,
+
+        decisionFormation:
+            besoinsFormation
+    };
+
+
+    Object.keys(elements).forEach(id => {
+
+        const element =
+            document.getElementById(id);
+
+        if(element){
+            element.textContent =
+                elements[id];
+        }
+
+    });
+
+
+    /* =========================
+       TABLEAU DES RECOMMANDATIONS
+    ========================= */
+
+    const table =
+        document.getElementById("decisionTable");
+
+    if(table){
+
+        if(!recommandations.length){
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="4"
+                        style="text-align:center;padding:20px">
+                        Aucun point nécessitant une action immédiate.
+                    </td>
+                </tr>
+            `;
+
+        }else{
+
+            table.innerHTML =
+                recommandations.map(r => `
+
+                    <tr>
+
+                        <td>
+                            <span class="badge">
+                                ${escapeHtml(r.priorite)}
+                            </span>
+                        </td>
+
+                        <td>
+                            ${escapeHtml(r.domaine)}
+                        </td>
+
+                        <td>
+                            ${escapeHtml(r.constat)}
+                        </td>
+
+                        <td>
+                            ${escapeHtml(r.recommandation)}
+                        </td>
+
+                    </tr>
+
+                `).join("");
+        }
+    }
+
+
+    /* =========================
+       SYNTHÈSE
+    ========================= */
+
+    const summary =
+        document.getElementById("decisionSummary");
+
+    if(summary){
+
+        const totalAlertes =
+            recommandations.length;
+
+        if(totalAlertes === 0){
+
+            summary.textContent =
+                "La situation RH analysée ne présente actuellement aucun signal nécessitant une action prioritaire.";
+
+        }else{
+
+            summary.textContent =
+                totalAlertes +
+                " point(s) nécessitent une attention RH. " +
+                "Les recommandations sont classées selon leur niveau de priorité.";
+        }
+    }
+
+}
 function showPage(id,btn){
  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active")); document.getElementById(id).classList.add("active");
  document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active")); btn.classList.add("active");
@@ -1969,6 +2339,7 @@ function showPage(id,btn){
     talents:"Gestion des talents",
     formation:"Gestion de la formation",
     retention:"Rétention / Fidélisation",
+    decision:"Aide à la décision RH",
     settings:"Paramètres du système",
     audit:"Journal d’audit"
 }[id];
@@ -1978,6 +2349,7 @@ if(id==="performance")renderPerformance();
 if(id==="talents")renderTalents();
 if(id==="retention")renderRetention();
 if(id==="kpi")renderKPI();
+if(id==="decision")renderDecision();
 }
 
   function escapeHtml(value){
