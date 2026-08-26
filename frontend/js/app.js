@@ -750,6 +750,7 @@ document.getElementById("app").innerHTML = `
     <button onclick="showPage('collaborateurs',this)">Collaborateurs</button>
     <button onclick="showPage('performance',this)">Performance</button>
    <button onclick="showPage('talents',this)">Talents</button>
+   <button onclick="showPage('formation',this)">Formation</button>
     <button onclick="showPage('settings',this)">Paramètres du système</button>
     <button onclick="showPage('audit',this)">Journal d’audit</button>
   </div>
@@ -1010,6 +1011,144 @@ Annuler
 <tbody id="talentTable"></tbody>
 </table>
 </div>
+</div>
+<div class="page" id="formation">
+<h1>Gestion de la formation</h1>
+<div class="muted">
+Planification, suivi et évaluation des actions de formation.
+</div>
+
+<div class="panel">
+
+<h3>Suivi des formations</h3>
+
+<div class="actions">
+
+<select id="formationCollaborateur" style="max-width:260px">
+<option value="">Tous les collaborateurs</option>
+</select>
+
+<select id="formationStatut" style="max-width:200px">
+<option value="">Tous les statuts</option>
+<option>Planifiée</option>
+<option>En cours</option>
+<option>Réalisée</option>
+<option>Annulée</option>
+</select>
+
+<button class="btn" onclick="openFormationForm()">
++ Nouvelle formation
+</button>
+
+</div>
+
+<table style="margin-top:18px">
+
+<thead>
+<tr>
+<th>Collaborateur</th>
+<th>Formation</th>
+<th>Organisme</th>
+<th>Date</th>
+<th>Durée</th>
+<th>Coût</th>
+<th>Statut</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="formationTable"></tbody>
+
+</table>
+
+</div>
+
+<div class="panel" id="formationForm" style="display:none">
+
+<h3 id="formationFormTitle">
+Nouvelle formation
+</h3>
+
+<div class="formgrid">
+
+<label>
+Collaborateur
+<select id="formCollab"></select>
+</label>
+
+<label>
+Intitulé de la formation
+<input id="formTitre">
+</label>
+
+<label>
+Organisme de formation
+<input id="formOrganisme">
+</label>
+
+<label>
+Date
+<input id="formDate" type="date">
+</label>
+
+<label>
+Durée (heures)
+<input id="formDuree" type="number" min="1">
+</label>
+
+<label>
+Coût
+<input id="formCout" type="number" min="0" step="0.01">
+</label>
+
+<label>
+Statut
+<select id="formStatut">
+<option>Planifiée</option>
+<option>En cours</option>
+<option>Réalisée</option>
+<option>Annulée</option>
+</select>
+</label>
+
+<label>
+Évaluation
+<select id="formEvaluation">
+<option value="">Non évaluée</option>
+<option>Insatisfaisante</option>
+<option>Satisfaisante</option>
+<option>Très satisfaisante</option>
+<option>Excellente</option>
+</select>
+</label>
+
+</div>
+
+<label style="display:block;margin-top:14px">
+Observations
+<textarea
+id="formNotes"
+rows="4"
+style="width:100%;margin-top:6px;padding:10px;border:1px solid #d1d5db;border-radius:7px">
+</textarea>
+</label>
+
+<div class="actions" style="margin-top:15px">
+
+<button class="btn" onclick="saveFormation()">
+Enregistrer
+</button>
+
+<button
+class="btn secondary"
+onclick="closeFormationForm()">
+Annuler
+</button>
+
+</div>
+
+</div>
+
 </div>
 <div class="page" id="settings"><h1>Paramètres du système</h1>
 <div class="panel"><h3>Configuration générale</h3><div class="formgrid">
@@ -1546,6 +1685,329 @@ function viewPerformance(id){
 
     alert(message);
 }
+let formations =
+    JSON.parse(localStorage.getItem("sigrt_formations")) || [];
+
+function saveFormations(){
+    localStorage.setItem(
+        "sigrt_formations",
+        JSON.stringify(formations)
+    );
+}
+
+function renderFormations(){
+
+    const table =
+        document.getElementById("formationTable");
+
+    if(!table) return;
+
+    const collaborateurFilter =
+        document.getElementById("formationCollaborateur")?.value || "";
+
+    const statutFilter =
+        document.getElementById("formationStatut")?.value || "";
+
+    const liste = formations.filter(f => {
+
+        const matchCollaborateur =
+            !collaborateurFilter ||
+            f.matricule === collaborateurFilter;
+
+        const matchStatut =
+            !statutFilter ||
+            f.statut === statutFilter;
+
+        return matchCollaborateur && matchStatut;
+    });
+
+    table.innerHTML = liste.map(f => {
+
+        const collaborateur =
+            SIGRT.collaborateurs.find(
+                c => c.matricule === f.matricule
+            );
+
+        return `
+        <tr>
+
+            <td>
+                ${escapeHtml(
+                    collaborateur?.name || f.matricule
+                )}
+            </td>
+
+            <td>
+                ${escapeHtml(f.titre || "")}
+            </td>
+
+            <td>
+                ${escapeHtml(f.organisme || "")}
+            </td>
+
+            <td>
+                ${escapeHtml(f.date || "")}
+            </td>
+
+            <td>
+                ${escapeHtml(String(f.duree || 0))} h
+            </td>
+
+            <td>
+                ${Number(f.cout || 0).toLocaleString("fr-FR")}
+            </td>
+
+            <td>
+                <span class="badge">
+                    ${escapeHtml(f.statut || "")}
+                </span>
+            </td>
+
+            <td>
+                <button
+                    class="btn secondary"
+                    onclick="viewFormation('${f.id}')">
+                    Voir
+                </button>
+            </td>
+
+        </tr>
+        `;
+
+    }).join("");
+
+    if(!liste.length){
+
+        table.innerHTML = `
+        <tr>
+            <td colspan="8"
+                style="text-align:center;padding:20px">
+                Aucune formation enregistrée.
+            </td>
+        </tr>
+        `;
+    }
+}
+
+function remplirCollaborateursFormation(){
+
+    const selects = [
+        document.getElementById("formationCollaborateur"),
+        document.getElementById("formCollab")
+    ];
+
+    selects.forEach(select => {
+
+        if(!select) return;
+
+        const valeurActuelle = select.value;
+
+        select.innerHTML =
+            select.id === "formationCollaborateur"
+            ? `<option value="">Tous les collaborateurs</option>`
+            : `<option value="">Sélectionner un collaborateur</option>`;
+
+        SIGRT.collaborateurs.forEach(c => {
+
+            const option =
+                document.createElement("option");
+
+            option.value = c.matricule;
+
+            option.textContent =
+                `${c.name} (${c.matricule})`;
+
+            select.appendChild(option);
+        });
+
+        select.value = valeurActuelle;
+    });
+}
+
+function openFormationForm(){
+
+    const form =
+        document.getElementById("formationForm");
+
+    if(!form) return;
+
+    document.getElementById("formCollab").value = "";
+    document.getElementById("formTitre").value = "";
+    document.getElementById("formOrganisme").value = "";
+    document.getElementById("formDate").value = "";
+    document.getElementById("formDuree").value = "";
+    document.getElementById("formCout").value = "";
+    document.getElementById("formStatut").value = "Planifiée";
+    document.getElementById("formEvaluation").value = "";
+    document.getElementById("formNotes").value = "";
+
+    remplirCollaborateursFormation();
+
+    form.style.display = "block";
+
+    document.getElementById("formCollab").focus();
+}
+
+function closeFormationForm(){
+
+    const form =
+        document.getElementById("formationForm");
+
+    if(form){
+        form.style.display = "none";
+    }
+}
+
+function saveFormation(){
+
+    const matricule =
+        document.getElementById("formCollab").value;
+
+    const titre =
+        document.getElementById("formTitre").value.trim();
+
+    const organisme =
+        document.getElementById("formOrganisme").value.trim();
+
+    const date =
+        document.getElementById("formDate").value;
+
+    const duree =
+        document.getElementById("formDuree").value;
+
+    const cout =
+        document.getElementById("formCout").value;
+
+    const statut =
+        document.getElementById("formStatut").value;
+
+    const evaluation =
+        document.getElementById("formEvaluation").value;
+
+    const notes =
+        document.getElementById("formNotes").value.trim();
+
+    if(
+        !matricule ||
+        !titre ||
+        !date ||
+        !duree
+    ){
+
+        alert(
+            "Veuillez renseigner le collaborateur, l'intitulé, la date et la durée de la formation."
+        );
+
+        return;
+    }
+
+    const formation = {
+
+        id: Date.now().toString(),
+
+        matricule: matricule,
+
+        titre: titre,
+
+        organisme: organisme,
+
+        date: date,
+
+        duree: Number(duree),
+
+        cout: Number(cout || 0),
+
+        statut: statut,
+
+        evaluation: evaluation,
+
+        notes: notes
+    };
+
+    formations.push(formation);
+
+    saveFormations();
+
+    renderFormations();
+
+    closeFormationForm();
+
+    alert(
+        "Formation enregistrée avec succès."
+    );
+}
+
+function viewFormation(id){
+
+    const formation =
+        formations.find(
+            f => f.id === id
+        );
+
+    if(!formation) return;
+
+    const collaborateur =
+        SIGRT.collaborateurs.find(
+            c => c.matricule === formation.matricule
+        );
+
+    const nom =
+        collaborateur
+            ? collaborateur.name
+            : formation.matricule;
+
+    alert(
+        "FORMATION\n\n" +
+
+        "Collaborateur : " + nom +
+
+        "\nMatricule : " +
+        formation.matricule +
+
+        "\n\nIntitulé : " +
+        formation.titre +
+
+        "\nOrganisme : " +
+        (formation.organisme || "Non renseigné") +
+
+        "\nDate : " +
+        formation.date +
+
+        "\nDurée : " +
+        formation.duree +
+        " h" +
+
+        "\nCoût : " +
+        Number(formation.cout || 0)
+            .toLocaleString("fr-FR") +
+
+        "\nStatut : " +
+        formation.statut +
+
+        "\nÉvaluation : " +
+        (formation.evaluation || "Non évaluée") +
+
+        "\n\nObservations : " +
+        (formation.notes || "Aucune observation.")
+    );
+}
+
+document.addEventListener(
+    "change",
+    function(e){
+
+        if(
+            e.target.id === "formationCollaborateur" ||
+            e.target.id === "formationStatut"
+        ){
+
+            renderFormations();
+        }
+    }
+);
+
+remplirCollaborateursFormation();
+renderFormations();
 renderApp();
 restoreSession();
 
