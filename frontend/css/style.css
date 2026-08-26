@@ -111,3 +111,40 @@ tr.decision-elevee{
 tr.decision-moyenne{
     background:#fffbeb;
 }
+/* =========================
+   NIVEAU DIAGNOSTIC RH
+========================= */
+
+#decisionNiveau{
+    padding:10px 14px;
+    border-radius:8px;
+    background:#f3f4f6;
+    display:inline-block;
+}
+/* =========================
+   COULEURS DIAGNOSTIC RH
+========================= */
+
+.diagnostic-maitrisee{
+    background:#dcfce7 !important;
+    color:#166534 !important;
+    border-left:5px solid #16a34a;
+}
+
+.diagnostic-vigilance{
+    background:#fef3c7 !important;
+    color:#92400e !important;
+    border-left:5px solid #f59e0b;
+}
+
+.diagnostic-attention{
+    background:#ffedd5 !important;
+    color:#9a3412 !important;
+    border-left:5px solid #ea580c;
+}
+
+.diagnostic-priorite{
+    background:#fee2e2 !important;
+    color:#991b1b !important;
+    border-left:5px solid #dc2626;
+}

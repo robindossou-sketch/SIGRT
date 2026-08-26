@@ -1409,6 +1409,15 @@ Analyse automatique des données RH et identification des situations nécessitan
 Analyse en cours...
 </div>
 
+<div id="decisionNiveau"
+     style="margin-top:12px;font-weight:700">
+Situation RH : Analyse en cours...
+</div>
+<div id="decisionExplication"
+     class="muted"
+     style="margin-top:10px">
+Analyse des principaux facteurs...
+</div>
 </div>
 
 <div class="panel">
@@ -2323,7 +2332,93 @@ function renderDecision(){
                 "Les recommandations sont classées selon leur niveau de priorité.";
         }
     }
+const niveau =
+        document.getElementById("decisionNiveau");
 
+    if(niveau){
+
+       let texte = "Situation RH : Maîtrisée";
+let classe = "diagnostic-maitrisee";
+
+if(risqueDepart > 0){
+
+    texte = "Situation RH : Priorité RH";
+    classe = "diagnostic-priorite";
+
+}else if(
+    performanceBaisse > 0 ||
+    besoinsFormation > 0
+){
+
+    texte = "Situation RH : Attention";
+    classe = "diagnostic-attention";
+
+}else if(
+    talentsDevelopper > 0
+){
+
+    texte = "Situation RH : Vigilance";
+    classe = "diagnostic-vigilance";
+}
+
+niveau.textContent = texte;
+niveau.className = classe;
+    }
+const explication =
+    document.getElementById("decisionExplication");
+
+if(explication){
+
+    const facteurs = [];
+
+    if(risqueDepart > 0){
+        facteurs.push(
+    risqueDepart +
+    (risqueDepart > 1
+        ? " risques de départ identifiés"
+        : " risque de départ identifié")
+);
+    }
+
+    if(performanceBaisse > 0){
+        facteurs.push(
+    performanceBaisse +
+    (performanceBaisse > 1
+        ? " situations de baisse de performance"
+        : " situation de baisse de performance")
+);
+    }
+
+    if(talentsDevelopper > 0){
+        facteurs.push(
+    talentsDevelopper +
+    (talentsDevelopper > 1
+        ? " talents nécessitant un développement"
+        : " talent nécessitant un développement")
+);
+    }
+
+    if(besoinsFormation > 0){
+        facteurs.push(
+    besoinsFormation +
+    (besoinsFormation > 1
+        ? " besoins de formation"
+        : " besoin de formation")
+);
+    }
+
+    if(facteurs.length === 0){
+
+        explication.textContent =
+            "Aucun facteur RH majeur ne nécessite actuellement une intervention.";
+
+    }else{
+
+        explication.textContent =
+            facteurs.join(" • ") +
+            ".";
+    }
+}
 }
 function showPage(id,btn){
  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active")); document.getElementById(id).classList.add("active");
