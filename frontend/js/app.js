@@ -749,10 +749,11 @@ document.getElementById("app").innerHTML = `
     <button onclick="showPage('users',this)">Utilisateurs & rôles</button>
     <button onclick="showPage('collaborateurs',this)">Collaborateurs</button>
     <button onclick="showPage('performance',this)">Performance</button>
-   <button onclick="showPage('talents',this)">Talents</button>
-   <button onclick="showPage('formation',this)">Formation</button>
-   <button onclick="showPage('retention',this)">Rétention / Fidélisation</button>
-   <button onclick="showPage('settings',this)">Paramètres du système</button>
+    <button onclick="showPage('talents',this)">Talents</button>
+    <button onclick="showPage('formation',this)">Formation</button>
+    <button onclick="showPage('retention',this)">Rétention / Fidélisation</button>
+    <button onclick="showPage('kpi',this)">KPI / Reporting</button>
+    <button onclick="showPage('settings',this)">Paramètres du système</button>
     <button onclick="showPage('audit',this)">Journal d’audit</button>
   </div>
 </aside>
@@ -1286,6 +1287,111 @@ Annuler
 
 </div>
 </div>
+<div class="page" id="kpi">
+
+<h1>KPI / Reporting RH</h1>
+
+<div class="muted">
+Tableau de bord des indicateurs clés de performance des ressources humaines.
+</div>
+
+<div class="panel">
+
+<h3>Indicateurs clés</h3>
+
+<div class="formgrid">
+
+<div class="panel">
+<strong>Effectif total</strong>
+<h2 id="kpiEffectifTotal">0</h2>
+</div>
+
+<div class="panel">
+<strong>Effectif actif</strong>
+<h2 id="kpiEffectifActif">0</h2>
+</div>
+
+<div class="panel">
+<strong>Collaborateurs évalués</strong>
+<h2 id="kpiCollaborateursEvalues">0</h2>
+</div>
+
+<div class="panel">
+<strong>Score moyen de performance</strong>
+<h2 id="kpiScoreMoyen">0 / 5</h2>
+</div>
+
+<div class="panel">
+<strong>Talents identifiés</strong>
+<h2 id="kpiTalents">0</h2>
+</div>
+
+<div class="panel">
+<strong>Formations enregistrées</strong>
+<h2 id="kpiFormations">0</h2>
+</div>
+
+<div class="panel">
+<strong>Collaborateurs à risque</strong>
+<h2 id="kpiRisque">0</h2>
+</div>
+
+<div class="panel">
+<strong>Taux de rétention</strong>
+<h2 id="kpiRetention">0 %</h2>
+</div>
+
+</div>
+
+</div>
+
+<div class="panel">
+
+<h3>Synthèse RH</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Indicateur</th>
+<th>Valeur</th>
+<th>Lecture</th>
+</tr>
+</thead>
+
+<tbody>
+
+<tr>
+<td>Effectif actif</td>
+<td id="kpiSyntheseActif">0</td>
+<td>Nombre de collaborateurs actuellement actifs</td>
+</tr>
+
+<tr>
+<td>Performance moyenne</td>
+<td id="kpiSynthesePerformance">0 / 5</td>
+<td>Score moyen des évaluations enregistrées</td>
+</tr>
+
+<tr>
+<td>Talents identifiés</td>
+<td id="kpiSyntheseTalents">0</td>
+<td>Collaborateurs intégrés au référentiel des talents</td>
+</tr>
+
+<tr>
+<td>Risque de départ</td>
+<td id="kpiSyntheseRisque">0</td>
+<td>Collaborateurs présentant un risque de départ</td>
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
 <div class="page" id="settings"><h1>Paramètres du système</h1>
 <div class="panel"><h3>Configuration générale</h3><div class="formgrid">
 <label>Nom du système<input value="SIGRT"></label><label>Version<input value="1.0 – Prototype"></label>
@@ -1697,6 +1803,161 @@ function viewRetention(id){
 
     alert(message);
 }
+function renderKPI(){
+
+    const collaborateurs = SIGRT.collaborateurs || [];
+    const talents = SIGRT.talents || [];
+
+    const evaluations =
+        JSON.parse(
+            localStorage.getItem("sigrt_evaluations")
+        ) || [];
+
+    const formations =
+        JSON.parse(
+            localStorage.getItem("sigrt_formations")
+        ) || [];
+
+    const retention =
+        JSON.parse(
+            localStorage.getItem("sigrt_retention")
+        ) || [];
+
+    /* =========================
+       EFFECTIFS
+    ========================= */
+
+    const effectifTotal =
+        collaborateurs.length;
+
+    const effectifActif =
+        collaborateurs.filter(
+            c => c.status === "Actif"
+        ).length;
+
+
+    /* =========================
+       PERFORMANCE
+    ========================= */
+
+    const collaborateursEvalues =
+        new Set(
+            evaluations.map(
+                e => e.matricule
+            )
+        ).size;
+
+    const scores =
+        evaluations
+            .map(e => Number(e.score))
+            .filter(
+                score => !isNaN(score)
+            );
+
+    const scoreMoyen =
+        scores.length
+            ? (
+                scores.reduce(
+                    (a,b) => a + b,
+                    0
+                ) / scores.length
+              ).toFixed(2)
+            : "0.00";
+
+
+    /* =========================
+       TALENTS
+    ========================= */
+
+    const talentsIdentifies =
+        talents.length;
+
+
+    /* =========================
+       FORMATION
+    ========================= */
+
+    const formationsEnregistrees =
+        formations.length;
+
+
+    /* =========================
+       RETENTION
+    ========================= */
+
+    const risques =
+        retention.filter(r =>
+            r.risque === "Élevé" ||
+            r.risque === "Critique"
+        ).length;
+
+    const retentionTaux =
+        effectifTotal > 0
+            ? (
+                (
+                    effectifTotal - risques
+                ) / effectifTotal * 100
+              ).toFixed(1)
+            : "0.0";
+
+
+    /* =========================
+       AFFICHAGE
+    ========================= */
+
+    const values = {
+
+        kpiEffectifTotal:
+            effectifTotal,
+
+        kpiEffectifActif:
+            effectifActif,
+
+        kpiCollaborateursEvalues:
+            collaborateursEvalues,
+
+        kpiScoreMoyen:
+            scoreMoyen + " / 5",
+
+        kpiTalents:
+            talentsIdentifies,
+
+        kpiFormations:
+            formationsEnregistrees,
+
+        kpiRisque:
+            risques,
+
+        kpiRetention:
+            retentionTaux + " %",
+
+        kpiSyntheseActif:
+            effectifActif,
+
+        kpiSynthesePerformance:
+            scoreMoyen + " / 5",
+
+        kpiSyntheseTalents:
+            talentsIdentifies,
+
+        kpiSyntheseRisque:
+            risques
+    };
+
+
+    Object.keys(values).forEach(id => {
+
+        const element =
+            document.getElementById(id);
+
+        if(element){
+            element.textContent =
+                values[id];
+        }
+
+    });
+
+}
 function showPage(id,btn){
  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active")); document.getElementById(id).classList.add("active");
  document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active")); btn.classList.add("active");
@@ -1716,7 +1977,8 @@ if(id==="collaborateurs")renderCollaborateurs();
 if(id==="performance")renderPerformance();
 if(id==="talents")renderTalents();
 if(id==="retention")renderRetention();
- }
+if(id==="kpi")renderKPI();
+}
 
   function escapeHtml(value){
       return String(value ?? "")
