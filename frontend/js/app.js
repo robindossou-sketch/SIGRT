@@ -751,7 +751,8 @@ document.getElementById("app").innerHTML = `
     <button onclick="showPage('performance',this)">Performance</button>
    <button onclick="showPage('talents',this)">Talents</button>
    <button onclick="showPage('formation',this)">Formation</button>
-    <button onclick="showPage('settings',this)">Paramètres du système</button>
+   <button onclick="showPage('retention',this)">Rétention / Fidélisation</button>
+   <button onclick="showPage('settings',this)">Paramètres du système</button>
     <button onclick="showPage('audit',this)">Journal d’audit</button>
   </div>
 </aside>
@@ -1150,6 +1151,141 @@ Annuler
 </div>
 
 </div>
+<div class="page" id="retention">
+<h1>Rétention / Fidélisation</h1>
+<div class="muted">Suivi des risques de départ et des actions de fidélisation des collaborateurs.</div>
+
+<div class="panel">
+<h3>Suivi de la fidélisation</h3>
+
+<div class="actions">
+<input class="search" id="retentionSearch"
+placeholder="Rechercher un collaborateur..."
+oninput="renderRetention()">
+
+<select id="retentionRisque"
+style="max-width:200px"
+onchange="renderRetention()">
+<option value="">Tous les niveaux de risque</option>
+<option>Faible</option>
+<option>Moyen</option>
+<option>Élevé</option>
+</select>
+
+<button class="btn" onclick="openRetentionForm()">
++ Nouveau suivi
+</button>
+</div>
+
+<table style="margin-top:18px">
+<thead>
+<tr>
+<th>Collaborateur</th>
+<th>Ancienneté</th>
+<th>Risque de départ</th>
+<th>Motif potentiel</th>
+<th>Dernier entretien</th>
+<th>Action de rétention</th>
+<th>Statut</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="retentionTable"></tbody>
+</table>
+</div>
+
+<div class="panel" id="retentionForm" style="display:none">
+
+<h3 id="retentionFormTitle">Nouveau suivi de fidélisation</h3>
+
+<div class="formgrid">
+
+<label>
+Collaborateur
+<select id="retentionCollaborateur"></select>
+</label>
+
+<label>
+Risque de départ
+<select id="retentionRisqueForm">
+<option value="">Sélectionner</option>
+<option>Faible</option>
+<option>Moyen</option>
+<option>Élevé</option>
+</select>
+</label>
+
+<label>
+Motif potentiel de départ
+<select id="retentionMotif">
+<option value="">Sélectionner</option>
+<option>Rémunération</option>
+<option>Évolution de carrière</option>
+<option>Conditions de travail</option>
+<option>Management</option>
+<option>Charge de travail</option>
+<option>Mobilité externe</option>
+<option>Autre</option>
+</select>
+</label>
+
+<label>
+Dernier entretien
+<input id="retentionEntretien" type="date">
+</label>
+
+<label>
+Action de rétention
+<input id="retentionAction"
+placeholder="Ex. entretien, formation, mobilité interne...">
+</label>
+
+<label>
+Responsable du suivi
+<input id="retentionResponsable">
+</label>
+
+<label>
+Échéance
+<input id="retentionEcheance" type="date">
+</label>
+
+<label>
+Statut
+<select id="retentionStatut">
+<option>À traiter</option>
+<option>En cours</option>
+<option>Réalisé</option>
+<option>Clôturé</option>
+</select>
+</label>
+
+</div>
+
+<label style="display:block;margin-top:14px">
+Observations
+<textarea
+id="retentionNotes"
+rows="4"
+style="width:100%;margin-top:6px;padding:10px;border:1px solid #d1d5db;border-radius:7px">
+</textarea>
+</label>
+
+<div class="actions" style="margin-top:15px">
+
+<button class="btn" onclick="saveRetention()">
+Enregistrer
+</button>
+
+<button class="btn secondary" onclick="closeRetentionForm()">
+Annuler
+</button>
+
+</div>
+
+</div>
+</div>
 <div class="page" id="settings"><h1>Paramètres du système</h1>
 <div class="panel"><h3>Configuration générale</h3><div class="formgrid">
 <label>Nom du système<input value="SIGRT"></label><label>Version<input value="1.0 – Prototype"></label>
@@ -1210,14 +1346,376 @@ function restoreSession(){
         }
     }
 }
+function renderRetention(){
+
+    const table =
+        document.getElementById("retentionTable");
+
+    if(!table) return;
+
+    const search =
+        (document.getElementById("retentionSearch")?.value || "")
+        .toLowerCase();
+
+    const risque =
+        document.getElementById("retentionRisque")?.value || "";
+
+    const suivis =
+        JSON.parse(
+            localStorage.getItem("sigrt_retention")
+        ) || [];
+
+    const filtres = suivis.filter(s => {
+
+        const collaborateur =
+            SIGRT.collaborateurs.find(
+                c => c.matricule === s.matricule
+            );
+
+        if(!collaborateur) return false;
+
+        const matchSearch =
+            collaborateur.name.toLowerCase().includes(search) ||
+            collaborateur.matricule.toLowerCase().includes(search);
+
+        const matchRisque =
+            !risque || s.risque === risque;
+
+        return matchSearch && matchRisque;
+    });
+
+    table.innerHTML = filtres.map(s => {
+
+        const collaborateur =
+            SIGRT.collaborateurs.find(
+                c => c.matricule === s.matricule
+            );
+
+        let anciennete = "—";
+
+        if(collaborateur?.hire){
+
+            const debut =
+                new Date(collaborateur.hire);
+
+            const aujourdHui =
+                new Date();
+
+            let annees =
+                aujourdHui.getFullYear() -
+                debut.getFullYear();
+
+            let mois =
+                aujourdHui.getMonth() -
+                debut.getMonth();
+
+            if(mois < 0){
+                annees--;
+                mois += 12;
+            }
+
+            anciennete =
+                annees + " an(s) " +
+                mois + " mois";
+        }
+
+        return `
+        <tr>
+
+            <td>
+                ${escapeHtml(
+                    collaborateur?.name || ""
+                )}
+            </td>
+
+            <td>
+                ${escapeHtml(anciennete)}
+            </td>
+
+            <td>
+                <span class="badge">
+                    ${escapeHtml(s.risque || "")}
+                </span>
+            </td>
+
+            <td>
+                ${escapeHtml(s.motif || "")}
+            </td>
+
+            <td>
+                ${escapeHtml(s.entretien || "—")}
+            </td>
+
+            <td>
+                ${escapeHtml(s.action || "—")}
+            </td>
+
+            <td>
+                <span class="badge">
+                    ${escapeHtml(s.statut || "À traiter")}
+                </span>
+            </td>
+
+            <td>
+                <button
+                    class="btn secondary"
+                    onclick="viewRetention('${s.id}')">
+                    Voir
+                </button>
+            </td>
+
+        </tr>
+        `;
+
+    }).join("");
+
+    if(!filtres.length){
+
+        table.innerHTML = `
+        <tr>
+            <td
+                colspan="8"
+                style="text-align:center;padding:20px">
+                Aucun suivi de fidélisation enregistré.
+            </td>
+        </tr>
+        `;
+    }
+}
+function openRetentionForm(){
+
+    const form =
+        document.getElementById("retentionForm");
+
+    if(!form) return;
+
+    const select =
+        document.getElementById(
+            "retentionCollaborateur"
+        );
+
+    if(select){
+
+        select.innerHTML =
+            '<option value="">Sélectionner un collaborateur</option>' +
+            SIGRT.collaborateurs
+                .filter(c => c.status === "Actif")
+                .map(c =>
+                    `<option value="${escapeHtml(c.matricule)}">
+                        ${escapeHtml(c.name)}
+                    </option>`
+                )
+                .join("");
+    }
+
+    form.style.display = "block";
+
+    form.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+}
+
+
+function closeRetentionForm(){
+
+    const form =
+        document.getElementById("retentionForm");
+
+    if(form){
+        form.style.display = "none";
+    }
+}
+function saveRetention(){
+
+    const matricule =
+        document.getElementById(
+            "retentionCollaborateur"
+        ).value;
+
+    const risque =
+        document.getElementById(
+            "retentionRisqueForm"
+        ).value;
+
+    const motif =
+        document.getElementById(
+            "retentionMotif"
+        ).value;
+
+    const entretien =
+        document.getElementById(
+            "retentionEntretien"
+        ).value;
+
+    const action =
+        document.getElementById(
+            "retentionAction"
+        ).value.trim();
+
+    const responsable =
+        document.getElementById(
+            "retentionResponsable"
+        ).value.trim();
+
+    const echeance =
+        document.getElementById(
+            "retentionEcheance"
+        ).value;
+
+    const statut =
+        document.getElementById(
+            "retentionStatut"
+        ).value;
+
+    const notes =
+        document.getElementById(
+            "retentionNotes"
+        ).value.trim();
+
+
+    if(!matricule || !risque){
+
+        alert(
+            "Veuillez sélectionner un collaborateur et renseigner le niveau de risque de départ."
+        );
+
+        return;
+    }
+
+
+    const suivis =
+        JSON.parse(
+            localStorage.getItem("sigrt_retention")
+        ) || [];
+
+
+    const suivi = {
+
+        id:
+            Date.now().toString(),
+
+        matricule:
+            matricule,
+
+        risque:
+            risque,
+
+        motif:
+            motif,
+
+        entretien:
+            entretien,
+
+        action:
+            action,
+
+        responsable:
+            responsable,
+
+        echeance:
+            echeance,
+
+        statut:
+            statut,
+
+        notes:
+            notes,
+
+        dateCreation:
+            new Date().toISOString()
+    };
+
+
+    suivis.push(suivi);
+
+
+    localStorage.setItem(
+        "sigrt_retention",
+        JSON.stringify(suivis)
+    );
+
+
+    renderRetention();
+
+    closeRetentionForm();
+
+
+    alert(
+        "Suivi de fidélisation enregistré avec succès."
+    );
+}
+function viewRetention(id){
+
+    const suivis =
+        JSON.parse(
+            localStorage.getItem("sigrt_retention")
+        ) || [];
+
+    const suivi =
+        suivis.find(
+            s => s.id === id
+        );
+
+    if(!suivi) return;
+
+
+    const collaborateur =
+        SIGRT.collaborateurs.find(
+            c => c.matricule === suivi.matricule
+        );
+
+
+    const nom =
+        collaborateur
+            ? collaborateur.name
+            : suivi.matricule;
+
+
+    let message =
+        "SUIVI DE FIDÉLISATION" +
+        "\n------------------------------" +
+        "\nCollaborateur : " + nom +
+        "\nMatricule : " + suivi.matricule +
+        "\n\nRisque de départ : " +
+        (suivi.risque || "Non renseigné") +
+        "\nMotif potentiel : " +
+        (suivi.motif || "Non renseigné") +
+        "\nDernier entretien : " +
+        (suivi.entretien || "Non renseigné") +
+        "\nAction de rétention : " +
+        (suivi.action || "Non renseignée") +
+        "\nResponsable : " +
+        (suivi.responsable || "Non renseigné") +
+        "\nÉchéance : " +
+        (suivi.echeance || "Non renseignée") +
+        "\nStatut : " +
+        (suivi.statut || "À traiter") +
+        "\n\nObservations : " +
+        (suivi.notes || "Aucune observation.");
+
+
+    alert(message);
+}
 function showPage(id,btn){
  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active")); document.getElementById(id).classList.add("active");
  document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active")); btn.classList.add("active");
- document.getElementById("pageTitle").textContent={dashboard:"Tableau de bord",users:"Utilisateurs & rôles",collaborateurs:"Gestion des collaborateurs",performance:"Gestion de la performance",talents:"Gestion des talents",settings:"Paramètres du système",audit:"Journal d’audit"}[id];
+ document.getElementById("pageTitle").textContent={
+    dashboard:"Tableau de bord",
+    users:"Utilisateurs & rôles",
+    collaborateurs:"Gestion des collaborateurs",
+    performance:"Gestion de la performance",
+    talents:"Gestion des talents",
+    formation:"Gestion de la formation",
+    retention:"Rétention / Fidélisation",
+    settings:"Paramètres du système",
+    audit:"Journal d’audit"
+}[id];
  if(id==="users")renderUsers();
 if(id==="collaborateurs")renderCollaborateurs();
 if(id==="performance")renderPerformance();
 if(id==="talents")renderTalents();
+if(id==="retention")renderRetention();
  }
 
   function escapeHtml(value){
