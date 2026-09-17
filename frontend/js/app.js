@@ -1,3 +1,12 @@
+
+import {
+    Collaborateurs,
+    Talents,
+    Evaluations,
+    Formations,
+    Retention,
+    Utilisateurs
+} from "./api.js";
 const SIGRT = {
   collaborateurs: [
     {matricule:"COL-0001",name:"Exemple Collaborateur",birth:"",sex:"Non renseigné",phone:"",email:"",dept:"Ressources Humaines",post:"Assistant RH",contract:"CDI",hire:"2024-01-15",status:"Actif",manager:"Direction RH",skills:"Administration RH, Excel, reporting",potential:"À évaluer",notes:""},
@@ -31,7 +40,7 @@ function saveTalents(){
         JSON.stringify(SIGRT.talents)
     );
 }
-function saveCollaborateur(){
+async function saveCollaborateur(){
 
     const required = [
         "cMatricule",
@@ -110,16 +119,32 @@ function saveCollaborateur(){
         notes: document.getElementById("cNotes").value.trim()
     };
 
-    if(i < 0){
+      try{
 
-        SIGRT.collaborateurs.push(c);
+        if(i < 0){
 
-    }else{
+            await Collaborateurs.creer(c);
 
-        SIGRT.collaborateurs[i] = c;
+        }else{
+
+            const ancienMatricule =
+                SIGRT.collaborateurs[i].matricule;
+
+            await Collaborateurs.modifier(
+                ancienMatricule,
+                c
+            );
+        }
+
+        SIGRT.collaborateurs =
+            await Collaborateurs.lister();
+
+    }catch(erreur){
+
+        alert(erreur.message);
+
+        return;
     }
-
-    saveCollaborateurs();
 
     closeCollabForm();
 
@@ -279,7 +304,7 @@ function editCollaborateur(matricule){
 }
 
 
-function deleteCollaborateur(matricule){
+async function deleteCollaborateur(matricule){
 
     const i = findCollabIndexByMatricule(matricule);
 
@@ -287,12 +312,23 @@ function deleteCollaborateur(matricule){
 
     if(confirm("Supprimer définitivement ce collaborateur du prototype ?")){
 
-        SIGRT.collaborateurs.splice(i, 1);
+        try {
 
-        saveCollaborateurs();
-        renderCollaborateurs();
+            await Collaborateurs.supprimer(matricule);
 
-        document.getElementById("collabDetail").style.display = "none";
+            SIGRT.collaborateurs =
+                await Collaborateurs.lister();
+
+            renderCollaborateurs();
+
+            document.getElementById("collabDetail").style.display = "none";
+
+        }catch(erreur){
+
+            alert(erreur.message);
+
+            return;
+        }
     }
 }
 function saveCollaborateurs(){
