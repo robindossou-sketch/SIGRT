@@ -35,10 +35,7 @@ if (savedTalents) {
 }
 
 function saveTalents(){
-    localStorage.setItem(
-        "sigrt_talents",
-        JSON.stringify(SIGRT.talents)
-    );
+    Talents.enregistrer(SIGRT.talents);
 }
 async function saveCollaborateur(){
 
@@ -332,10 +329,7 @@ async function deleteCollaborateur(matricule){
     }
 }
 function saveCollaborateurs(){
-    localStorage.setItem(
-        "sigrt_collaborateurs",
-        JSON.stringify(SIGRT.collaborateurs)
-    );
+    Collaborateurs.enregistrer(SIGRT.collaborateurs);
 }
 
 function openCollabForm(index = -1){
@@ -431,7 +425,7 @@ function renderTalents(){
     });
 
      const evaluations =
-        JSON.parse(localStorage.getItem("sigrt_evaluations")) || [];
+        Evaluations.lister();
 
     table.innerHTML = talents.map(t => {
 
@@ -1591,9 +1585,7 @@ function renderRetention(){
         document.getElementById("retentionRisque")?.value || "";
 
     const suivis =
-        JSON.parse(
-            localStorage.getItem("sigrt_retention")
-        ) || [];
+        Retention.lister();
 
     const filtres = suivis.filter(s => {
 
@@ -1815,9 +1807,7 @@ function saveRetention(){
 
 
     const suivis =
-        JSON.parse(
-            localStorage.getItem("sigrt_retention")
-        ) || [];
+        Retention.lister();
 
 
     const suivi = {
@@ -1860,10 +1850,7 @@ function saveRetention(){
     suivis.push(suivi);
 
 
-    localStorage.setItem(
-        "sigrt_retention",
-        JSON.stringify(suivis)
-    );
+    Retention.enregistrer(suivis);
 
 
     renderRetention();
@@ -1878,9 +1865,7 @@ function saveRetention(){
 function viewRetention(id){
 
     const suivis =
-        JSON.parse(
-            localStorage.getItem("sigrt_retention")
-        ) || [];
+        Retention.lister();
 
     const suivi =
         suivis.find(
@@ -1933,19 +1918,13 @@ function renderKPI(){
     const talents = SIGRT.talents || [];
 
     const evaluations =
-        JSON.parse(
-            localStorage.getItem("sigrt_evaluations")
-        ) || [];
+        Evaluations.lister();
 
     const formations =
-        JSON.parse(
-            localStorage.getItem("sigrt_formations")
-        ) || [];
+        Formations.lister();
 
     const retention =
-        JSON.parse(
-            localStorage.getItem("sigrt_retention")
-        ) || [];
+        Retention.lister();
 
     /* =========================
        EFFECTIFS
@@ -2085,19 +2064,13 @@ function renderDecision(){
     const talents = SIGRT.talents || [];
 
     const evaluations =
-        JSON.parse(
-            localStorage.getItem("sigrt_evaluations")
-        ) || [];
+        Evaluations.lister();
 
     const formations =
-        JSON.parse(
-            localStorage.getItem("sigrt_formations")
-        ) || [];
+        Formations.lister();
 
     const retention =
-        JSON.parse(
-            localStorage.getItem("sigrt_retention")
-        ) || [];
+        Retention.lister();
 
 
     let performanceBaisse = 0;
@@ -2491,10 +2464,7 @@ if(id==="decision")renderDecision();
   }
 
 function saveUsers(){
-    localStorage.setItem(
-        "sigrt_users",
-        JSON.stringify(SIGRT.users)
-    );
+    Utilisateurs.enregistrer(SIGRT.users);
 }
 function renderUsers(){
     const q = (document.getElementById("userSearch")?.value || "").toLowerCase();
@@ -2682,15 +2652,12 @@ function savePerformance(){
 
 
     let evaluations =
-        JSON.parse(localStorage.getItem("sigrt_evaluations")) || [];
+        Evaluations.lister();
 
 
     evaluations.push(evaluation);
 
-    localStorage.setItem(
-        "sigrt_evaluations",
-        JSON.stringify(evaluations)
-    );
+    Evaluations.enregistrer(evaluations);
 
     proposerTalentDepuisEvaluation(evaluation);
 
@@ -2767,7 +2734,7 @@ function renderPerformance(){
     if(!tbody) return;
 
     const evaluations =
-        JSON.parse(localStorage.getItem("sigrt_evaluations")) || [];
+        Evaluations.lister();
 
     tbody.innerHTML = evaluations.map(evaluation => {
 
@@ -2832,7 +2799,7 @@ function renderPerformance(){
 function viewPerformance(id){
 
     const evaluations =
-        JSON.parse(localStorage.getItem("sigrt_evaluations")) || [];
+        Evaluations.lister();
 
     const evaluation =
         evaluations.find(e => e.id === id);
@@ -2947,13 +2914,10 @@ function viewPerformance(id){
     alert(message);
 }
 let formations =
-    JSON.parse(localStorage.getItem("sigrt_formations")) || [];
+    Formations.lister();
 
 function saveFormations(){
-    localStorage.setItem(
-        "sigrt_formations",
-        JSON.stringify(formations)
-    );
+    Formations.enregistrer(formations);
 }
 
 function renderFormations(){
