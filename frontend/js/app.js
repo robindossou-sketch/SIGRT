@@ -793,13 +793,94 @@ document.getElementById("app").innerHTML = `
 <div class="user">Connecté : <strong>Administrateur RH</strong> <button class="btn secondary" onclick="logout()">Déconnexion</button></div></header>
 <section class="content">
 <div class="page active" id="dashboard">
-<h1>Tableau de bord</h1><div class="muted">Vue synthétique du socle du SIGRT.</div>
+
+<h1>Tableau de bord RH</h1>
+<div class="muted">Vue synthétique des principaux indicateurs du SIGRT.</div>
+
 <div class="cards">
-<div class="card"><div class="muted">Collaborateurs</div><div class="value"id="collabCount">0</div></div>
-<div class="card"><div class="muted">Utilisateurs</div><div class="value" id="userCount">3</div></div>
-<div class="card"><div class="muted">Rôles</div><div class="value">3</div></div>
-<div class="card"><div class="muted">Alertes système</div><div class="value">0</div></div>
+
+<div class="card">
+<div class="muted">Effectif total</div>
+<div class="value" id="dashEffectif">0</div>
 </div>
+
+<div class="card">
+<div class="muted">Utilisateurs</div>
+<div class="value" id="dashUsers">0</div>
+</div>
+
+<div class="card">
+<div class="muted">Talents identifiés</div>
+<div class="value" id="dashTalents">0</div>
+</div>
+
+<div class="card">
+<div class="muted">Évaluations</div>
+<div class="value" id="dashEvaluations">0</div>
+</div>
+
+<div class="card">
+<div class="muted">Formations</div>
+<div class="value" id="dashFormations">0</div>
+</div>
+
+<div class="card">
+<div class="muted">Suivis de rétention</div>
+<div class="value" id="dashRetention">0</div>
+</div>
+
+</div>
+
+<div class="panel" style="margin-top:20px">
+
+<h3>KPI RH</h3>
+
+<div class="cards">
+
+<div class="card">
+<div class="muted">Taux d'activité</div>
+<div class="value" id="dashActivityRate">0%</div>
+</div>
+
+<div class="card">
+<div class="muted">Collaborateurs en CDI</div>
+<div class="value" id="dashCDI">0</div>
+</div>
+
+<div class="card">
+<div class="muted">CDD / autres contrats</div>
+<div class="value" id="dashOtherContracts">0</div>
+</div>
+
+<div class="card">
+<div class="muted">Potentiel à évaluer</div>
+<div class="value" id="dashPotential">0</div>
+</div>
+
+</div>
+
+</div>
+
+<div class="panel" style="margin-top:20px">
+
+<h3>Répartition des collaborateurs par département</h3>
+
+<div id="dashboardDepartments" class="cards">
+<div class="muted">Aucune donnée disponible.</div>
+</div>
+
+</div>
+
+<div class="panel" style="margin-top:20px">
+
+<h3>Répartition des collaborateurs par statut</h3>
+
+<div id="dashboardStatuses" class="cards">
+<div class="muted">Aucune donnée disponible.</div>
+</div>
+
+</div>
+
 </div>
 <div class="page" id="users"><h1>Utilisateurs & rôles</h1>
 <div class="muted">Gestion du contrôle d'accès au SIGRT.</div>
@@ -2430,6 +2511,173 @@ if(explication){
     }
 }
 }
+
+function renderDashboard(){
+
+    const collaborateurs = SIGRT.collaborateurs || [];
+    const utilisateurs = SIGRT.users || [];
+    const talents = SIGRT.talents || [];
+    const evaluations = SIGRT.evaluations || [];
+    const formations = SIGRT.formations || [];
+    const retention = SIGRT.retention || [];
+
+    const effectifEl = document.getElementById("dashEffectif");
+    const usersEl = document.getElementById("dashUsers");
+    const talentsEl = document.getElementById("dashTalents");
+    const evaluationsEl = document.getElementById("dashEvaluations");
+    const formationsEl = document.getElementById("dashFormations");
+    const retentionEl = document.getElementById("dashRetention");
+
+    if(effectifEl) effectifEl.textContent = collaborateurs.length;
+    if(usersEl) usersEl.textContent = utilisateurs.length;
+    if(talentsEl) talentsEl.textContent = talents.length;
+    if(evaluationsEl) evaluationsEl.textContent = evaluations.length;
+    if(formationsEl) formationsEl.textContent = formations.length;
+    if(retentionEl) retentionEl.textContent = retention.length;
+
+
+    /* KPI RH */
+
+    const total = collaborateurs.length;
+
+    const actifs = collaborateurs.filter(c =>
+        String(c.status || "").toLowerCase() === "actif"
+    ).length;
+
+    const cdi = collaborateurs.filter(c =>
+        String(c.contract || "").toUpperCase() === "CDI"
+    ).length;
+
+    const autresContrats = total - cdi;
+
+    const potentielAevaluer = collaborateurs.filter(c =>
+        String(c.potential || "").toLowerCase() === "à évaluer"
+    ).length;
+
+    const activityRate = total > 0
+        ? Math.round((actifs / total) * 100)
+        : 0;
+
+    const activityEl =
+        document.getElementById("dashActivityRate");
+
+    const cdiEl =
+        document.getElementById("dashCDI");
+
+    const otherContractsEl =
+        document.getElementById("dashOtherContracts");
+
+    const potentialEl =
+        document.getElementById("dashPotential");
+
+    if(activityEl)
+        activityEl.textContent = activityRate + "%";
+
+    if(cdiEl)
+        cdiEl.textContent = cdi;
+
+    if(otherContractsEl)
+        otherContractsEl.textContent = autresContrats;
+
+    if(potentialEl)
+        potentialEl.textContent = potentielAevaluer;
+
+
+    /* Répartition par département */
+
+    const departments = {};
+
+    collaborateurs.forEach(c => {
+
+        const dept = c.dept || "Non renseigné";
+
+        departments[dept] =
+            (departments[dept] || 0) + 1;
+
+    });
+
+    const departmentContainer =
+        document.getElementById("dashboardDepartments");
+
+    if(departmentContainer){
+
+        const entries =
+            Object.entries(departments)
+                .sort((a,b) => b[1] - a[1]);
+
+        if(entries.length === 0){
+
+            departmentContainer.innerHTML =
+                '<div class="muted">Aucune donnée disponible.</div>';
+
+        }else{
+
+            departmentContainer.innerHTML =
+                entries.map(([dept,count]) => `
+                    <div class="card">
+                        <div class="muted">${escapeHtml(dept)}</div>
+                        <div class="value">${count}</div>
+                        <div class="muted">
+                            ${collaborateurs.length
+                                ? Math.round((count / collaborateurs.length) * 100)
+                                : 0}% de l'effectif
+                        </div>
+                    </div>
+                `).join("");
+
+        }
+
+    }
+
+
+    /* Répartition par statut */
+
+    const statuses = {};
+
+    collaborateurs.forEach(c => {
+
+        const status = c.status || "Non renseigné";
+
+        statuses[status] =
+            (statuses[status] || 0) + 1;
+
+    });
+
+    const statusContainer =
+        document.getElementById("dashboardStatuses");
+
+    if(statusContainer){
+
+        const entries =
+            Object.entries(statuses)
+                .sort((a,b) => b[1] - a[1]);
+
+        if(entries.length === 0){
+
+            statusContainer.innerHTML =
+                '<div class="muted">Aucune donnée disponible.</div>';
+
+        }else{
+
+            statusContainer.innerHTML =
+                entries.map(([status,count]) => `
+                    <div class="card">
+                        <div class="muted">${escapeHtml(status)}</div>
+                        <div class="value">${count}</div>
+                        <div class="muted">
+                            ${collaborateurs.length
+                                ? Math.round((count / collaborateurs.length) * 100)
+                                : 0}% de l'effectif
+                        </div>
+                    </div>
+                `).join("");
+
+        }
+
+    }
+
+}
+
 function showPage(id,btn){
  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active")); document.getElementById(id).classList.add("active");
  document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active")); btn.classList.add("active");
@@ -2445,6 +2693,7 @@ function showPage(id,btn){
     settings:"Paramètres du système",
     audit:"Journal d’audit"
 }[id];
+ if(id==="dashboard")renderDashboard();
  if(id==="users")renderUsers();
 if(id==="collaborateurs")renderCollaborateurs();
 if(id==="performance")renderPerformance();
