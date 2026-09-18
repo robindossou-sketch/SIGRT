@@ -1548,6 +1548,7 @@ function login(){
         document.getElementById("loginError").style.display = "block";
     }
 }
+window.login = login;
 function logout(){
 
     localStorage.removeItem("sigrt_session");
@@ -2454,6 +2455,7 @@ if(id==="kpi")renderKPI();
 if(id==="decision")renderDecision();
 }
 
+window.showPage = showPage;
   function escapeHtml(value){
       return String(value ?? "")
           .replace(/&/g, "&amp;")
@@ -2658,6 +2660,10 @@ function savePerformance(){
     evaluations.push(evaluation);
 
     Evaluations.enregistrer(evaluations);
+
+    Evaluations.synchroniser(evaluations).catch(erreur => {
+        console.error("Erreur de synchronisation des évaluations :", erreur);
+    });
 
     proposerTalentDepuisEvaluation(evaluation);
 
@@ -3240,3 +3246,41 @@ const collabCount = document.getElementById("collabCount");
 if(collabCount){
     collabCount.textContent = SIGRT.collaborateurs.length;
 }
+
+window.savePerformance = savePerformance;
+
+window.logout = logout;
+window.renderUsers = renderUsers;
+window.openUserForm = openUserForm;
+window.closeUserForm = closeUserForm;
+window.addUser = addUser;
+window.removeUser = removeUser;
+
+window.renderCollaborateurs = renderCollaborateurs;
+window.openCollabForm = openCollabForm;
+window.saveCollaborateur = saveCollaborateur;
+window.closeCollabForm = closeCollabForm;
+window.viewCollaborateur = viewCollaborateur;
+window.editCollaborateur = editCollaborateur;
+window.deleteCollaborateur = deleteCollaborateur;
+
+window.openPerformanceForm = openPerformanceForm;
+window.closePerformanceForm = closePerformanceForm;
+window.savePerformance = savePerformance;
+window.viewPerformance = viewPerformance;
+
+window.openTalentForm = openTalentForm;
+window.closeTalentForm = closeTalentForm;
+window.saveTalent = saveTalent;
+window.editTalent = editTalent;
+
+window.openFormationForm = openFormationForm;
+window.closeFormationForm = closeFormationForm;
+window.saveFormation = saveFormation;
+window.viewFormation = viewFormation;
+
+window.renderRetention = renderRetention;
+window.openRetentionForm = openRetentionForm;
+window.closeRetentionForm = closeRetentionForm;
+window.saveRetention = saveRetention;
+window.viewRetention = viewRetention;

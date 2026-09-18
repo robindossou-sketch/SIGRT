@@ -97,16 +97,36 @@ export const Collaborateurs = {
 };
 
 function creerModule(cle) {
-	return {
-		lister() {
-			return lireLocalStorage(STORAGE_KEYS[cle]);
-		},
-		enregistrer(donnees) {
-			ecrireLocalStorage(STORAGE_KEYS[cle], donnees);
-		}
-	};
-}
+        const endpoint = SIGRT_CONFIG.baseUrl + "/" + cle;
 
+        return {
+                lister() {
+                        return lireLocalStorage(STORAGE_KEYS[cle]);
+                },
+
+                enregistrer(donnees) {
+                        ecrireLocalStorage(STORAGE_KEYS[cle], donnees);
+                },
+
+                async synchroniser(donnees) {
+                        const response = await fetch(endpoint, {
+                                method: "PUT",
+                                headers: {
+                                        "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify(donnees)
+                        });
+
+                        if (!response.ok) {
+                                throw new Error(
+                                        "Impossible de synchroniser " + cle + " avec l'API."
+                                );
+                        }
+
+                        return await response.json();
+                }
+        };
+}
 export const Talents = creerModule("talents");
 export const Evaluations = creerModule("evaluations");
 export const Formations = creerModule("formations");
