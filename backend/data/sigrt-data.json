@@ -1,0 +1,165 @@
+{
+  "collaborateurs": [
+    {
+      "matricule": "Col 8568",
+      "name": "Adjagan Théodoire",
+      "birth": "1999-08-18",
+      "sex": "Non renseigné",
+      "phone": "+229 012856825698",
+      "email": "gordgoi@gmail.com",
+      "dept": "Commercial",
+      "post": "Chef commercial",
+      "contract": "CDI",
+      "hire": "2024-03-07",
+      "status": "Actif",
+      "manager": "Changan Bible",
+      "skills": "",
+      "potential": "Potentiel élevé",
+      "notes": "Test KI"
+    },
+    {
+      "matricule": "COL 256",
+      "name": "josiane",
+      "birth": "1986-06-18",
+      "sex": "Homme",
+      "phone": "0128569256",
+      "email": "",
+      "dept": "Direction",
+      "post": "chargé de l'administration",
+      "contract": "CDI",
+      "hire": "2023-03-15",
+      "status": "Actif",
+      "manager": "",
+      "skills": "",
+      "potential": "À évaluer",
+      "notes": "test"
+    },
+    {
+      "matricule": "Col458",
+      "name": "ADJAVON SYLVAIN",
+      "birth": "1999-07-02",
+      "sex": "Homme",
+      "phone": "",
+      "email": "",
+      "dept": "Housekeeping",
+      "post": "AGG",
+      "contract": "CDD",
+      "hire": "2026-01-01",
+      "contractEnd": "2026-09-30",
+      "status": "Actif",
+      "manager": "JOE",
+      "skills": "",
+      "potential": "À évaluer",
+      "notes": ""
+    }
+  ],
+  "utilisateurs": [],
+  "talents": [
+    {
+      "matricule": "COL 4528",
+      "potentiel": "Potentiel moyen",
+      "posteCible": "coordinateur",
+      "statut": "Prêt pour évolution",
+      "notes": ""
+    },
+    {
+      "matricule": "Col 8568",
+      "potentiel": "Potentiel moyen",
+      "posteCible": "Responsable coordination",
+      "statut": "Prêt pour évolution",
+      "notes": ""
+    },
+    {
+      "matricule": "COL 256",
+      "potentiel": "Potentiel moyen",
+      "posteCible": "RAF",
+      "statut": "En développement",
+      "notes": "bon"
+    }
+  ],
+  "evaluations": [
+    {
+      "id": 1789728492926,
+      "matricule": "COL 4528",
+      "periode": "2026 - S2",
+      "qualite": 3,
+      "productivite": 3,
+      "procedures": 3,
+      "comportement": 3,
+      "competences": 2,
+      "potentiel": "Faible",
+      "commentaire": "tres",
+      "score": 2.8,
+      "statut": "Évaluée",
+      "date": "2026-09-18T10:48:12.926Z"
+    },
+    {
+      "id": 1789728946120,
+      "matricule": "Col 8568",
+      "periode": "2026 - S2",
+      "qualite": 1,
+      "productivite": 1,
+      "procedures": 1,
+      "comportement": 1,
+      "competences": 1,
+      "potentiel": "Faible",
+      "commentaire": "ytest",
+      "score": 1,
+      "statut": "Évaluée",
+      "date": "2026-09-18T10:55:46.120Z"
+    }
+  ],
+  "formations": [
+    {
+      "id": "1789728273188",
+      "matricule": "COL-0001",
+      "titre": "iuo",
+      "organisme": "",
+      "date": "2025-06-18",
+      "duree": 15,
+      "cout": 5000000,
+      "statut": "Planifiée",
+      "evaluation": "Satisfaisante",
+      "notes": "TEST"
+    },
+    {
+      "id": "1789728454069",
+      "matricule": "Col 8568",
+      "titre": "kiokj",
+      "organisme": "uoij",
+      "date": "2026-09-01",
+      "duree": 15,
+      "cout": 500000,
+      "statut": "Planifiée",
+      "evaluation": "Très satisfaisante",
+      "notes": ""
+    },
+    {
+      "id": "1789731495580",
+      "matricule": "Col 8568",
+      "titre": "kiokj",
+      "organisme": "uoij",
+      "date": "2026-09-01",
+      "duree": 15,
+      "cout": 500000,
+      "statut": "Planifiée",
+      "evaluation": "",
+      "notes": ""
+    }
+  ],
+  "retention": [
+    {
+      "id": "1789728536934",
+      "matricule": "Col 8568",
+      "risque": "Moyen",
+      "motif": "Conditions de travail",
+      "entretien": "2026-09-04",
+      "action": "entrtien",
+      "responsable": "yoanne",
+      "echeance": "2026-09-23",
+      "statut": "En cours",
+      "notes": "bon",
+      "dateCreation": "2026-09-18T10:48:56.934Z"
+    }
+  ]
+}

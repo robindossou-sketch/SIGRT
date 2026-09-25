@@ -5,7 +5,9 @@ import {
     Evaluations,
     Formations,
     Retention,
-    Utilisateurs
+    Utilisateurs,
+    verifierAPI,
+    synchroniserToutesLesDonnees
 } from "./api.js";
 const SIGRT = {
   collaborateurs: [
@@ -32,6 +34,30 @@ if (savedTalents) {
     SIGRT.talents = JSON.parse(savedTalents);
 } else {
     SIGRT.talents = [];
+}
+
+const savedEvaluations = localStorage.getItem("sigrt_evaluations");
+
+if (savedEvaluations) {
+    SIGRT.evaluations = JSON.parse(savedEvaluations);
+} else {
+    SIGRT.evaluations = [];
+}
+
+const savedFormations = localStorage.getItem("sigrt_formations");
+
+if (savedFormations) {
+    SIGRT.formations = JSON.parse(savedFormations);
+} else {
+    SIGRT.formations = [];
+}
+
+const savedRetention = localStorage.getItem("sigrt_retention");
+
+if (savedRetention) {
+    SIGRT.retention = JSON.parse(savedRetention);
+} else {
+    SIGRT.retention = [];
 }
 
 function saveTalents(){
@@ -857,6 +883,16 @@ document.getElementById("app").innerHTML = `
 <div class="value" id="dashPotential">0</div>
 </div>
 
+</div>
+
+</div>
+
+<div class="panel" style="margin-top:20px">
+
+<h3>Alertes RH</h3>
+
+<div id="dashboardAlerts">
+<div class="muted">Aucune alerte RH.</div>
 </div>
 
 </div>
@@ -2513,6 +2549,7 @@ if(explication){
 }
 
 function renderDashboard(){
+    console.log("SIGRT DASHBOARD - collaborateurs :", SIGRT.collaborateurs.length);
 
     const collaborateurs = SIGRT.collaborateurs || [];
     const utilisateurs = SIGRT.users || [];
@@ -2581,6 +2618,77 @@ function renderDashboard(){
 
     if(potentialEl)
         potentialEl.textContent = potentielAevaluer;
+
+
+    /* Alertes RH */
+
+    const alerts = [];
+
+    const potentielCount = collaborateurs.filter(c =>
+        String(c.potential || "").toLowerCase() === "à évaluer"
+    ).length;
+
+    if(potentielCount > 0){
+        alerts.push(
+            `Potentiel : ${potentielCount} collaborateur${potentielCount > 1 ? "s" : ""} à évaluer.`
+        );
+    }
+
+    const inactifs = collaborateurs.filter(c =>
+        String(c.status || "").toLowerCase() !== "actif"
+    ).length;
+
+    if(inactifs > 0){
+        alerts.push(
+            `Statut : ${inactifs} collaborateur${inactifs > 1 ? "s" : ""} avec un statut différent de « Actif ».`
+        );
+    }
+
+    const aujourdHui = new Date();
+
+    const recents = collaborateurs.filter(c => {
+
+        if(!c.hire) return false;
+
+        const dateEmbauche = new Date(c.hire);
+
+        if(Number.isNaN(dateEmbauche.getTime())) return false;
+
+        const difference =
+            (aujourdHui - dateEmbauche) / (1000 * 60 * 60 * 24);
+
+        return difference >= 0 && difference <= 90;
+
+    }).length;
+
+    if(recents > 0){
+        alerts.push(
+            `Intégration : ${recents} collaborateur${recents > 1 ? "s" : ""} recruté${recents > 1 ? "s" : ""} au cours des 90 derniers jours.`
+        );
+    }
+
+    const alertsContainer =
+        document.getElementById("dashboardAlerts");
+
+    if(alertsContainer){
+
+        if(alerts.length === 0){
+
+            alertsContainer.innerHTML =
+                '<div class="muted">✓ Aucune alerte RH détectée.</div>';
+
+        }else{
+
+            alertsContainer.innerHTML =
+                alerts.map(alert => `
+                    <div class="card" style="margin-bottom:10px">
+                        <div>${escapeHtml(alert)}</div>
+                    </div>
+                `).join("");
+
+        }
+
+    }
 
 
     /* Répartition par département */
@@ -2675,6 +2783,77 @@ function renderDashboard(){
         }
 
     }
+
+    /* =========================
+       PILOTAGE RH - KPI
+    ========================= */
+
+    const dashboardScores = evaluations
+        .map(e => Number(e.score))
+        .filter(score => !Number.isNaN(score));
+
+    const dashboardScoreMoyen =
+        dashboardScores.length
+            ? (
+                dashboardScores.reduce(
+                    (a, b) => a + b,
+                    0
+                ) / dashboardScores.length
+              ).toFixed(2)
+            : "0.00";
+
+    const dashboardCollaborateursEvalues =
+        new Set(
+            evaluations
+                .map(e => e.matricule)
+                .filter(Boolean)
+        ).size;
+
+    const dashboardRisques =
+        retention.filter(r =>
+            r.risque === "Élevé" ||
+            r.risque === "Critique"
+        ).length;
+
+    const dashboardTauxRisque =
+        actifs > 0
+            ? ((dashboardRisques / actifs) * 100).toFixed(1)
+            : "0.0";
+
+    const dashScoreMoyen =
+        document.getElementById("dashScoreMoyen");
+
+    const dashCollaborateursEvalues =
+        document.getElementById("dashCollaborateursEvalues");
+
+    const dashTalentsPilotage =
+        document.getElementById("dashTalentsPilotage");
+
+    const dashRisques =
+        document.getElementById("dashRisques");
+
+    const dashTauxRisque =
+        document.getElementById("dashTauxRisque");
+
+    if(dashScoreMoyen)
+        dashScoreMoyen.textContent =
+            dashboardScoreMoyen + " / 5";
+
+    if(dashCollaborateursEvalues)
+        dashCollaborateursEvalues.textContent =
+            dashboardCollaborateursEvalues;
+
+    if(dashTalentsPilotage)
+        dashTalentsPilotage.textContent =
+            talents.length;
+
+    if(dashRisques)
+        dashRisques.textContent =
+            dashboardRisques;
+
+    if(dashTauxRisque)
+        dashTauxRisque.textContent =
+            dashboardTauxRisque + "%";
 
 }
 
@@ -3489,12 +3668,39 @@ document.addEventListener(
 remplirCollaborateursFormation();
 renderFormations();
 renderApp();
+renderDashboard();
 restoreSession();
 
-const collabCount = document.getElementById("collabCount");
-if(collabCount){
-    collabCount.textContent = SIGRT.collaborateurs.length;
-}
+(async function initialiserSynchronisationAPI() {
+    try {
+        if (
+            typeof verifierAPI !== "function" ||
+            typeof synchroniserToutesLesDonnees !== "function"
+        ) {
+            console.warn("SIGRT — fonctions API non disponibles.");
+            return;
+        }
+
+        const disponible = await verifierAPI();
+
+        if (!disponible) {
+            console.log("SIGRT — API indisponible, mode local conservé.");
+            return;
+        }
+
+        const resultats = await synchroniserToutesLesDonnees();
+
+        console.log(
+            "SIGRT — synchronisation API terminée :",
+            resultats
+        );
+    } catch (erreur) {
+        console.warn(
+            "SIGRT — synchronisation API ignorée :",
+            erreur.message
+        );
+    }
+})();
 
 window.savePerformance = savePerformance;
 

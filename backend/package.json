@@ -4,7 +4,8 @@
   "description": "Dossier réservé aux services API et règles métier.\r Le prototype actuel fonctionne côté navigateur. Le backend sera ajouté avant la mise en production.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",

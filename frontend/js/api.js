@@ -4,7 +4,35 @@
  * Mode API : prévu pour Node.js + PostgreSQL
  */
 
-export const SIGRT_CONFIG = {
+window.SIGRT_API_STATUS = {
+    disponible: false,
+    derniereVerification: null,
+    erreur: null
+};
+
+export async function verifierAPI() {
+    try {
+        const response = await fetch(SIGRT_CONFIG.baseUrl + "/health", {
+            method: "GET",
+            cache: "no-store"
+        });
+
+        SIGRT_API_STATUS.disponible = response.ok;
+        SIGRT_API_STATUS.derniereVerification = new Date().toISOString();
+        SIGRT_API_STATUS.erreur = response.ok ? null : "HTTP " + response.status;
+
+        return response.ok;
+    } catch (error) {
+        SIGRT_API_STATUS.disponible = false;
+        SIGRT_API_STATUS.derniereVerification = new Date().toISOString();
+        SIGRT_API_STATUS.erreur = error.message;
+        return false;
+    }
+}
+
+window.verifierAPI = verifierAPI;
+
+const SIGRT_CONFIG = {
 	mode: "local",
 	baseUrl: "http://localhost:4000/api"
 };
@@ -132,3 +160,76 @@ export const Evaluations = creerModule("evaluations");
 export const Formations = creerModule("formations");
 export const Retention = creerModule("retention");
 export const Utilisateurs = creerModule("utilisateurs");
+
+
+/* =========================================================
+   SYNCHRONISATION SIGRT
+   Le localStorage reste la source locale principale.
+   L'API reçoit une copie lorsque le serveur est disponible.
+   ========================================================= */
+
+export async function synchroniserToutesLesDonnees() {
+    const collections = [
+        "collaborateurs",
+        "utilisateurs",
+        "talents",
+        "evaluations",
+        "formations",
+        "retention"
+    ];
+
+    const resultats = {};
+
+    for (const collection of collections) {
+        try {
+            const endpoint = SIGRT_CONFIG.baseUrl + "/" + collection;
+
+            const response = await fetch(endpoint, {
+                method: "GET",
+                cache: "no-store"
+            });
+
+            if (!response.ok) {
+                throw new Error(
+                    "Impossible de récupérer " +
+                    collection +
+                    " depuis l'API (HTTP " +
+                    response.status +
+                    ")."
+                );
+            }
+
+            const donneesAPI = await response.json();
+
+            const donnees =
+                Array.isArray(donneesAPI)
+                    ? donneesAPI
+                    : Array.isArray(donneesAPI.data)
+                        ? donneesAPI.data
+                        : [];
+
+            ecrireLocalStorage(
+                STORAGE_KEYS[collection],
+                donnees
+            );
+
+            resultats[collection] = {
+                success: true,
+                count: donnees.length,
+                source: "api"
+            };
+
+        } catch (error) {
+
+            resultats[collection] = {
+                success: false,
+                message: error.message,
+                source: "local"
+            };
+        }
+    }
+
+    return resultats;
+}
+
+window.synchroniserToutesLesDonnees = synchroniserToutesLesDonnees;

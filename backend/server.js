@@ -1,9 +1,73 @@
 const express = require("express");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+const DATA_FILE = path.join(__dirname, "data", "sigrt-data.json");
+
+function sauvegarderDonnees() {
+    const donnees = {
+        collaborateurs,
+        utilisateurs,
+        talents,
+        evaluations,
+        formations,
+        retention
+    };
+
+    fs.writeFileSync(
+        DATA_FILE,
+        JSON.stringify(donnees, null, 2),
+        "utf-8"
+    );
+}
+
+function chargerDonnees() {
+    try {
+        if (!fs.existsSync(DATA_FILE)) {
+            return;
+        }
+
+        const donnees = JSON.parse(
+            fs.readFileSync(DATA_FILE, "utf-8")
+        );
+
+        if (Array.isArray(donnees.collaborateurs)) {
+            collaborateurs = donnees.collaborateurs;
+        }
+
+        if (Array.isArray(donnees.utilisateurs)) {
+            utilisateurs = donnees.utilisateurs;
+        }
+
+        if (Array.isArray(donnees.talents)) {
+            talents = donnees.talents;
+        }
+
+        if (Array.isArray(donnees.evaluations)) {
+            evaluations = donnees.evaluations;
+        }
+
+        if (Array.isArray(donnees.formations)) {
+            formations = donnees.formations;
+        }
+
+        if (Array.isArray(donnees.retention)) {
+            retention = donnees.retention;
+        }
+
+        console.log("SIGRT — données locales chargées.");
+    } catch (erreur) {
+        console.error(
+            "SIGRT — impossible de charger les données locales :",
+            erreur.message
+        );
+    }
+}
 
 app.use(cors());
 app.use(express.json());
@@ -80,6 +144,7 @@ app.post("/api/collaborateurs", (req, res) => {
     }
 
     collaborateurs.push(nouveauCollaborateur);
+    sauvegarderDonnees();
 
     res.status(201).json(nouveauCollaborateur);
 });
@@ -105,7 +170,30 @@ app.put("/api/collaborateurs/:matricule", (req, res) => {
         ...req.body
     };
 
+    sauvegarderDonnees();
+
     res.json(collaborateurs[index]);
+});
+
+/*
+ * PUT — Synchroniser toute la collection des collaborateurs
+ */
+app.put("/api/collaborateurs", (req, res) => {
+    if (!Array.isArray(req.body)) {
+        return res.status(400).json({
+            success: false,
+            message: "Les données des collaborateurs doivent être un tableau."
+        });
+    }
+
+    collaborateurs = req.body;
+    sauvegarderDonnees();
+
+    res.json({
+        success: true,
+        data: collaborateurs,
+        count: collaborateurs.length
+    });
 });
 
 /*
@@ -127,6 +215,8 @@ app.delete("/api/collaborateurs/:matricule", (req, res) => {
     collaborateurs = collaborateurs.filter(
         collaborateur => collaborateur.matricule !== matricule
     );
+
+    sauvegarderDonnees();
 
     res.json({
         success: true,
@@ -165,12 +255,19 @@ Object.entries(modules).forEach(([nom, getDonnees]) => {
         if (nom === "retention") retention = req.body;
         if (nom === "utilisateurs") utilisateurs = req.body;
 
+        sauvegarderDonnees();
+
         res.json({
             success: true,
             data: getDonnees()
         });
     });
 });
+
+/*
+ * Chargement des données persistantes
+ */
+chargerDonnees();
 
 /*
  * Démarrage du serveur
