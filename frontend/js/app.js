@@ -1713,10 +1713,113 @@ Aucune analyse disponible.
 <tr><td>Aide à la décision IA</td><td>4</td><td>À développer</td></tr></table></div></div>
 
 
-<div class="page" id="audit"><h1>Journal d’audit</h1><div class="muted">Prototype de traçabilité.</div>
-<div class="panel"><table><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Résultat</th></tr>
-<tr><td id="auditDate">—</td><td>Administrateur RH</td><td>Connexion</td><td><span class="badge">Réussie</span></td></tr></table></div></div>
-</section></main></div>`;
+<div class="page" id="audit">
+
+<h1>Journal d’audit</h1>
+
+<div class="muted">
+Traçabilité des actions effectuées dans le système SIGRT.
+</div>
+
+<div class="grid" style="margin-top:16px">
+
+    <div class="card">
+        <div class="muted">Actions enregistrées</div>
+        <div class="value" id="auditTotal">0</div>
+    </div>
+
+    <div class="card">
+        <div class="muted">Dernière action</div>
+        <div class="value" id="auditDerniereAction">—</div>
+    </div>
+
+</div>
+
+<div class="panel" style="margin-top:20px">
+
+    <div class="formgrid">
+
+        <label>
+            Recherche
+            <input
+                id="auditSearch"
+                type="text"
+                placeholder="Utilisateur, cible, détail..."
+                oninput="renderAudit()"
+            >
+        </label>
+
+        <label>
+            Module
+            <select id="auditModule" onchange="renderAudit()">
+                <option value="">Tous les modules</option>
+                <option value="Collaborateurs">Collaborateurs</option>
+                <option value="Performance">Performance</option>
+                <option value="Talents">Talents</option>
+                <option value="Formation">Formation</option>
+                <option value="Rétention">Rétention</option>
+                <option value="Utilisateurs">Utilisateurs</option>
+                <option value="Système">Système</option>
+            </select>
+        </label>
+
+        <label>
+            Action
+            <select id="auditAction" onchange="renderAudit()">
+                <option value="">Toutes les actions</option>
+                <option value="Création">Création</option>
+                <option value="Modification">Modification</option>
+                <option value="Suppression">Suppression</option>
+                <option value="Connexion">Connexion</option>
+                <option value="Consultation">Consultation</option>
+            </select>
+        </label>
+
+    </div>
+
+    <div style="margin-top:16px">
+        <button class="btn" onclick="renderAudit()">
+            Actualiser le journal
+        </button>
+    </div>
+
+</div>
+
+<div class="panel" style="margin-top:20px">
+
+    <div style="overflow-x:auto">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Date / heure</th>
+                    <th>Utilisateur</th>
+                    <th>Rôle</th>
+                    <th>Action</th>
+                    <th>Module</th>
+                    <th>Cible</th>
+                    <th>Détails</th>
+                </tr>
+            </thead>
+
+            <tbody id="auditTableBody">
+
+                <tr>
+                    <td colspan="7" class="muted">
+                        Chargement du journal...
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+</div></section></main></div>`;
 renderUsers();
 }
 
@@ -2939,6 +3042,162 @@ function renderDashboard(){
 
 }
 
+
+async function renderAudit(){
+
+    const tbody =
+        document.getElementById("auditTableBody");
+
+    if(!tbody) return;
+
+    const recherche =
+        (
+            document.getElementById("auditSearch")?.value ||
+            ""
+        ).trim().toLowerCase();
+
+    const moduleFiltre =
+        document.getElementById("auditModule")?.value || "";
+
+    const actionFiltre =
+        document.getElementById("auditAction")?.value || "";
+
+    const totalElement =
+        document.getElementById("auditTotal");
+
+    const derniereActionElement =
+        document.getElementById("auditDerniereAction");
+
+    tbody.innerHTML =
+        '<tr><td colspan="7" class="muted">Chargement du journal...</td></tr>';
+
+    let donnees = [];
+
+    try {
+
+        const response = await fetch(
+            "http://localhost:4000/api/audit",
+            {
+                method: "GET",
+                cache: "no-store"
+            }
+        );
+
+        if(response.ok){
+
+            const resultat =
+                await response.json();
+
+            if(Array.isArray(resultat)){
+                donnees = resultat;
+            }
+
+        }
+
+    } catch(erreur){
+
+        console.warn(
+            "SIGRT — API audit indisponible, utilisation du journal local."
+        );
+
+    }
+
+    if(
+        donnees.length === 0 &&
+        typeof Audit !== "undefined" &&
+        typeof Audit.lister === "function"
+    ){
+
+        const local =
+            Audit.lister();
+
+        if(Array.isArray(local)){
+            donnees = local;
+        }
+
+    }
+
+    donnees.sort(
+        (a,b) =>
+            new Date(b.date || 0) -
+            new Date(a.date || 0)
+    );
+
+    const donneesFiltrees =
+        donnees.filter(entree => {
+
+            const texte = [
+                entree.utilisateur,
+                entree.role,
+                entree.action,
+                entree.module,
+                entree.cible,
+                entree.details
+            ]
+            .join(" ")
+            .toLowerCase();
+
+            return (
+                (!recherche || texte.includes(recherche)) &&
+                (!moduleFiltre || entree.module === moduleFiltre) &&
+                (!actionFiltre || entree.action === actionFiltre)
+            );
+
+        });
+
+    if(totalElement){
+        totalElement.textContent =
+            donnees.length;
+    }
+
+    if(derniereActionElement){
+
+        derniereActionElement.textContent =
+            donnees.length > 0
+                ? (donnees[0].action || "—")
+                : "—";
+
+    }
+
+    if(donneesFiltrees.length === 0){
+
+        tbody.innerHTML =
+            '<tr><td colspan="7" class="muted">Aucune action correspondant aux critères.</td></tr>';
+
+        return;
+    }
+
+    tbody.innerHTML =
+        donneesFiltrees.map(entree => {
+
+            const date =
+                entree.date
+                    ? new Date(entree.date)
+                        .toLocaleString("fr-FR")
+                    : "—";
+
+            return `
+                <tr>
+                    <td>${date}</td>
+                    <td>${escapeHtml(entree.utilisateur || "Système")}</td>
+                    <td>${escapeHtml(entree.role || "—")}</td>
+                    <td>
+                        <span class="badge">
+                            ${escapeHtml(entree.action || "—")}
+                        </span>
+                    </td>
+                    <td>${escapeHtml(entree.module || "—")}</td>
+                    <td>${escapeHtml(entree.cible || "—")}</td>
+                    <td>${escapeHtml(entree.details || "—")}</td>
+                </tr>
+            `;
+
+        }).join("");
+
+}
+
+window.renderAudit = renderAudit;
+
 function showPage(id,btn){
  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active")); document.getElementById(id).classList.add("active");
  document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active")); btn.classList.add("active");
@@ -2963,6 +3222,7 @@ if(id==="formation") renderFormations();
 if(id==="retention")renderRetention();
 if(id==="kpi")renderKPI();
 if(id==="decision")renderDecision();
+if(id==="audit")renderAudit();
 }
 
 window.showPage = showPage;
