@@ -161,6 +161,62 @@ export const Formations = creerModule("formations");
 export const Retention = creerModule("retention");
 export const Utilisateurs = creerModule("utilisateurs");
 
+export const Audit = {
+    lister() {
+        return lireLocalStorage("sigrt_audit");
+    },
+
+    enregistrer(donnees) {
+        ecrireLocalStorage("sigrt_audit", donnees);
+        return donnees;
+    },
+
+    async ajouter(entree) {
+        const nouvelleEntree = {
+            date: new Date().toISOString(),
+            utilisateur: entree.utilisateur || "Système",
+            role: entree.role || "",
+            action: entree.action || "",
+            module: entree.module || "",
+            cible: entree.cible || "",
+            details: entree.details || ""
+        };
+
+        const actuel = this.lister();
+
+        const response = await fetch(
+            SIGRT_CONFIG.baseUrl + "/audit",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(nouvelleEntree)
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                "Impossible d'enregistrer l'action dans le journal d'audit."
+            );
+        }
+
+        const resultat = await response.json();
+
+        const entreeFinale =
+            resultat && resultat.data
+                ? resultat.data
+                : nouvelleEntree;
+
+        actuel.push(entreeFinale);
+
+        this.enregistrer(actuel);
+
+        return entreeFinale;
+    }
+};
+
+
 
 /* =========================================================
    SYNCHRONISATION SIGRT
@@ -175,7 +231,8 @@ export async function synchroniserToutesLesDonnees() {
         "talents",
         "evaluations",
         "formations",
-        "retention"
+        "retention",
+        "audit"
     ];
 
     const resultats = {};
@@ -233,3 +290,5 @@ export async function synchroniserToutesLesDonnees() {
 }
 
 window.synchroniserToutesLesDonnees = synchroniserToutesLesDonnees;
+
+window.SIGRT_Audit = Audit;

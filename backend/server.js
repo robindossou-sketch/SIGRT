@@ -16,7 +16,8 @@ function sauvegarderDonnees() {
         talents,
         evaluations,
         formations,
-        retention
+        retention,
+        audit
     };
 
     fs.writeFileSync(
@@ -60,6 +61,10 @@ function chargerDonnees() {
             retention = donnees.retention;
         }
 
+        if (Array.isArray(donnees.audit)) {
+            audit = donnees.audit;
+        }
+
         console.log("SIGRT — données locales chargées.");
     } catch (erreur) {
         console.error(
@@ -81,6 +86,7 @@ let evaluations = [];
 let formations = [];
 let retention = [];
 let utilisateurs = [];
+let audit = [];
 
 let collaborateurs = [
     {
@@ -178,6 +184,40 @@ app.put("/api/collaborateurs/:matricule", (req, res) => {
 /*
  * PUT — Synchroniser toute la collection des collaborateurs
  */
+app.get("/api/audit", (req, res) => {
+    res.json(audit);
+});
+
+app.post("/api/audit", (req, res) => {
+    const entree = req.body;
+
+    if (!entree || typeof entree !== "object") {
+        return res.status(400).json({
+            success: false,
+            message: "Entrée d'audit invalide."
+        });
+    }
+
+    const nouvelleEntree = {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        utilisateur: entree.utilisateur || "Système",
+        role: entree.role || "",
+        action: entree.action || "",
+        module: entree.module || "",
+        cible: entree.cible || "",
+        details: entree.details || ""
+    };
+
+    audit.push(nouvelleEntree);
+    sauvegarderDonnees();
+
+    res.status(201).json({
+        success: true,
+        data: nouvelleEntree
+    });
+});
+
 app.put("/api/collaborateurs", (req, res) => {
     if (!Array.isArray(req.body)) {
         return res.status(400).json({

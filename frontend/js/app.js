@@ -6,9 +6,68 @@ import {
     Formations,
     Retention,
     Utilisateurs,
+    Audit,
     verifierAPI,
     synchroniserToutesLesDonnees
 } from "./api.js";
+
+/* =========================================================
+   JOURNAL D'AUDIT SIGRT
+========================================================= */
+
+async function enregistrerAudit({
+    utilisateur = "Système",
+    role = "",
+    action = "",
+    module = "",
+    cible = "",
+    details = ""
+} = {}) {
+
+    const entree = {
+        utilisateur,
+        role,
+        action,
+        module,
+        cible,
+        details
+    };
+
+    try {
+
+        if (
+            typeof Audit !== "undefined" &&
+            typeof Audit.ajouter === "function"
+        ) {
+            const resultat = await Audit.ajouter(entree);
+
+            console.log(
+                "SIGRT — action auditée :",
+                action,
+                module,
+                cible
+            );
+
+            return resultat;
+        }
+
+        console.warn(
+            "SIGRT — module Audit indisponible."
+        );
+
+    } catch (erreur) {
+
+        console.warn(
+            "SIGRT — impossible d'enregistrer l'audit :",
+            erreur.message
+        );
+    }
+
+    return null;
+}
+
+window.enregistrerAudit = enregistrerAudit;
+
 const SIGRT = {
   collaborateurs: [
     {matricule:"COL-0001",name:"Exemple Collaborateur",birth:"",sex:"Non renseigné",phone:"",email:"",dept:"Ressources Humaines",post:"Assistant RH",contract:"CDI",hire:"2024-01-15",status:"Actif",manager:"Direction RH",skills:"Administration RH, Excel, reporting",potential:"À évaluer",notes:""},
@@ -62,6 +121,14 @@ if (savedRetention) {
 
 function saveTalents(){
     Talents.enregistrer(SIGRT.talents);
+
+    enregistrerAudit({
+        action: "Création",
+        module: "Talents",
+        cible: "",
+        details: "Talent enregistré ou mis à jour dans le référentiel."
+    });
+
 }
 async function saveCollaborateur(){
 
@@ -161,6 +228,13 @@ async function saveCollaborateur(){
 
         SIGRT.collaborateurs =
             await Collaborateurs.lister();
+
+            await enregistrerAudit({
+                action: "Modification",
+                module: "Collaborateurs",
+                cible: c.matricule || "",
+                details: "Fiche collaborateur enregistrée."
+            });
 
     }catch(erreur){
 
@@ -1970,6 +2044,14 @@ function saveRetention(){
 
     Retention.enregistrer(suivis);
 
+    enregistrerAudit({
+        action: "Création",
+        module: "Rétention",
+        cible: "",
+        details: "Suivi de fidélisation enregistré ou mis à jour."
+    });
+
+
 
     renderRetention();
 
@@ -3089,6 +3171,19 @@ function savePerformance(){
 
     Evaluations.enregistrer(evaluations);
 
+    enregistrerAudit({
+        action: "Création",
+        module: "Performance",
+        cible: evaluation.matricule || "",
+        details:
+            "Évaluation " +
+            (evaluation.periode || "") +
+            " enregistrée — score " +
+            evaluation.score +
+            "/5"
+    });
+
+
     Evaluations.synchroniser(evaluations).catch(erreur => {
         console.error("Erreur de synchronisation des évaluations :", erreur);
     });
@@ -3352,6 +3447,14 @@ let formations =
 
 function saveFormations(){
     Formations.enregistrer(formations);
+
+    enregistrerAudit({
+        action: "Création",
+        module: "Formation",
+        cible: "",
+        details: "Formation enregistrée ou mise à jour."
+    });
+
 }
 
 function renderFormations(){
