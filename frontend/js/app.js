@@ -2734,6 +2734,91 @@ if(explication){
 }
 
 function renderDashboard(){
+    /* =====================================================
+       COMPTEURS RH DYNAMIQUES
+       ===================================================== */
+
+    const collaborateurs =
+        typeof Collaborateurs !== "undefined" &&
+        typeof Collaborateurs.lister === "function"
+            ? Collaborateurs.lister()
+            : [];
+
+    const utilisateurs =
+        typeof Utilisateurs !== "undefined" &&
+        typeof Utilisateurs.lister === "function"
+            ? Utilisateurs.lister()
+            : [];
+
+    const talents =
+        typeof Talents !== "undefined" &&
+        typeof Talents.lister === "function"
+            ? Talents.lister()
+            : [];
+
+    const evaluations =
+        typeof Evaluations !== "undefined" &&
+        typeof Evaluations.lister === "function"
+            ? Evaluations.lister()
+            : [];
+
+    const formations =
+        typeof Formations !== "undefined" &&
+        typeof Formations.lister === "function"
+            ? Formations.lister()
+            : [];
+
+    const retention =
+        typeof Retention !== "undefined" &&
+        typeof Retention.lister === "function"
+            ? Retention.lister()
+            : [];
+
+    const mettreAJourCompteur = (id, valeur) => {
+
+        const element =
+            document.getElementById(id);
+
+        if(element){
+            element.textContent =
+                Array.isArray(valeur)
+                    ? valeur.length
+                    : valeur;
+        }
+
+    };
+
+    mettreAJourCompteur(
+        "userCount",
+        utilisateurs
+    );
+
+    mettreAJourCompteur(
+        "collabCount",
+        collaborateurs
+    );
+
+    mettreAJourCompteur(
+        "talentCount",
+        talents
+    );
+
+    mettreAJourCompteur(
+        "evaluationCount",
+        evaluations
+    );
+
+    mettreAJourCompteur(
+        "formationCount",
+        formations
+    );
+
+    mettreAJourCompteur(
+        "retentionCount",
+        retention
+    );
+
+
     console.log("SIGRT DASHBOARD - collaborateurs :", SIGRT.collaborateurs.length);
 
     const collaborateurs = SIGRT.collaborateurs || [];
